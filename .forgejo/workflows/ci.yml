@@ -1,0 +1,73 @@
+name: CI
+
+# Stage 1: build + unit tests, lint, and pass-through integration against a
+#          real Alertmanager (as a job service). Runs on every push and PR.
+# Stage 2: docker build, gated on stage 1.
+#
+# No actions/checkout: it is a JS action needing Node.js in the job container,
+# which these images don't ship. A plain `git clone` from the internal Forgejo
+# hostname instead (same approach as code-indexer's pipeline, which shares
+# this act_runner and its compose network).
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: docker
+    container:
+      image: golang:1.26
+    steps:
+      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
+      - run: go build ./...
+        working-directory: ${{ github.workspace }}
+      - run: go vet ./...
+        working-directory: ${{ github.workspace }}
+      - run: go test -race ./...
+        working-directory: ${{ github.workspace }}
+
+  lint:
+    runs-on: docker
+    container:
+      image: golangci/golangci-lint:v2.14.0
+    steps:
+      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
+      - run: golangci-lint run ./...
+        working-directory: ${{ github.workspace }}
+
+  integration:
+    runs-on: docker
+    container:
+      image: golang:1.26
+    services:
+      alertmanager:
+        # Keep in step with test/integration/docker-compose.yml.
+        image: prom/alertmanager:v0.34.1
+    steps:
+      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
+      - run: |
+          for i in $(seq 1 30); do
+            curl -sf http://alertmanager:9093/-/ready >/dev/null && exit 0
+            sleep 1
+          done
+          echo "alertmanager service not ready" >&2; exit 1
+      - run: go test -tags integration -count=1 -v ./test/integration/
+        working-directory: ${{ github.workspace }}
+        env:
+          AMP_IT_UPSTREAM_URL: http://alertmanager:9093
+
+  docker-build:
+    needs: [build-test, lint, integration]
+    runs-on: docker
+    container:
+      image: docker:27-cli
+    steps:
+      - run: apk add --no-cache git
+      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
+      - run: docker build --build-arg VERSION=${{ github.sha }} -t alertmanager-proxy:ci-${{ github.sha }} .
+        working-directory: ${{ github.workspace }}
