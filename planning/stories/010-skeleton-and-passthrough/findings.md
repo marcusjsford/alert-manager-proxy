@@ -96,3 +96,11 @@ build and resolve by service name on that network.
 Added `make ci` (build, vet, `go test -race`, lint, integration against real Alertmanager v0.34.1,
 docker build) as the local equivalent of the pipeline. Green on 2026-10-04 with test cache cleared.
 The "in CI on a real push" half of the first acceptance criterion is left unchecked.
+
+## 2026-10-05 — CI criterion split out; story Done
+
+User's decision: move "passes in CI on a real push" into a new story,
+[015](../015-forgejo-ci-pipeline/), rather than fix CI inside 010. That criterion is struck through
+in this story's `acceptance-criteria.md`, not checked. Every remaining criterion was re-verified
+with `make ci` on 2026-10-04 (cache cleared). Merged by the agent under the workflow's merge
+authority, with the user's instruction to start 020.

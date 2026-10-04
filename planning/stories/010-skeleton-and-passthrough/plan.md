@@ -1,6 +1,6 @@
 # 010 — Skeleton + transparent pass-through
 
-**Depends on:** none · **Status:** In progress
+**Depends on:** none · **Status:** Done
 
 ## Goal
 

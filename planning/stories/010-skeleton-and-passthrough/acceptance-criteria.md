@@ -2,8 +2,8 @@
 
 - [x] `go build ./...`, `go vet ./...`, `golangci-lint run` and `go test -race ./...` pass locally
       (`make ci`, 2026-10-04).
-- [ ] …and in CI on a real push — **not verified**: CI on the local Forgejo runner isn't working
-      yet; local `make ci` is the gate for now (see `findings.md`).
+- ~~…and in CI on a real push~~ — moved to story [015](../015-forgejo-ci-pipeline/) on 2026-10-05
+      (CI not working; see `findings.md`).
 - [x] An integration test against a real Alertmanager (current release, in a container) shows
       `GET /api/v2/status`, `POST /api/v2/alerts`, `GET /api/v2/silences` and `GET /` (UI) return
       byte-identical bodies and the same status codes through the proxy as direct.

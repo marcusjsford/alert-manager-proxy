@@ -25,7 +25,8 @@ short Findings Summary below.
 
 | # | Story | Depends on | Status | One-line summary |
 |---|---|---|---|---|
-| [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | In progress | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
+| [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | **Done** | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
+| [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010 | Not started | Make the pushed `ci.yml` actually run green on the local Forgejo; until then `make ci` is the gate |
 | [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | Not started | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
 | [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 010 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
 | [040](040-post-alerts/) | `POST /api/v1/alerts` | 020, 030 | Not started | The legacy-Prometheus hot path |
@@ -50,4 +51,14 @@ traffic for the agreed period, procedure in 110), not a story — the proxy itse
 
 ## Completed Story Summaries
 
-_None yet._
+### 010 — Skeleton + transparent pass-through
+
+Go proxy that passes every non-v1 path through to one Alertmanager unchanged (byte-identical
+status, alerts, silences and UI against a real v0.34.1), answers `/api/v1/*` with `501` in v1's
+error envelope, and returns `502`/`504` for unreachable/slow upstreams. Checking the real systems
+first corrected the plan: a current Alertmanager answers v1 with `410 Gone` and a "deprecated" body,
+not `404`; and 0.26's v1 responses carry CORS headers that later stories must reproduce. Found and
+fixed a 502/504 misclassification of dial timeouts, and an integration test that a mutation showed
+couldn't detect dropped query strings. Go baseline: 6.9 MiB binary, 16.5 MB image, 2.5 MiB idle RSS.
+CI isn't working on the local Forgejo yet; the CI-green criterion moved to story 015 and `make ci`
+is the gate meanwhile.
