@@ -1,0 +1,11 @@
+# Real Alertmanager for the pass-through integration test (`make integration`).
+# Pinned: the version is what the test proves pass-through against.
+services:
+  alertmanager:
+    image: prom/alertmanager:${AM_VERSION:-v0.34.1}
+    ports:
+      - "127.0.0.1:${AM_PORT:-19093}:9093"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9093/-/ready"]
+      interval: 1s
+      retries: 30

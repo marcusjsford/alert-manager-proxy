@@ -1,6 +1,6 @@
 # alertmanager-proxy — Architecture Decision Record
 
-**Status:** proposed 2026-10-04, to be accepted by story [010](stories/010-skeleton-and-passthrough/) ·
+**Status:** accepted 2026-10-04 (story [010](stories/010-skeleton-and-passthrough/)) ·
 **Scope:** the whole initiative
 
 Each decision records what was chosen, what it optimises for, and what was rejected — the rejected
