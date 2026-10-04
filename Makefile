@@ -4,7 +4,7 @@ LINT_IMAGE ?= golangci/golangci-lint:v2.14.0
 AM_PORT ?= 19093
 COMPOSE = docker compose -f test/integration/docker-compose.yml -p amp-integration
 
-.PHONY: build test lint integration docker clean
+.PHONY: build test lint integration docker ci clean
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/alertmanager-proxy ./cmd/alertmanager-proxy
@@ -24,6 +24,10 @@ integration:
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
+
+# Everything the Forgejo pipeline runs, locally: the merge gate while CI on the
+# local Forgejo runner isn't working (story 010 findings).
+ci: build test lint integration docker
 
 clean:
 	rm -rf bin

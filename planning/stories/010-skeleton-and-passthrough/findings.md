@@ -83,3 +83,16 @@ telemetry yet):
 | RSS after 2,000 sequential `GET /api/v2/status` | 8.0 MiB |
 
 Graceful shutdown on SIGTERM confirmed (`docker stop` → exit code 0).
+
+## CI not working yet — local `make ci` is the gate for now
+
+`.forgejo/workflows/ci.yml` was pushed with `39f1e5d`, but CI on the local Forgejo runner isn't
+working (user's call on 2026-10-04 to stop waiting on it and test locally). Not investigated in
+this story. Unverified assumptions in that workflow, for whoever picks it up: that the shared
+`act_runner` (registered for code-indexer, network `code-indexer_indexer_net`) picks up jobs from
+this repo, and that job `services:` (the Alertmanager for the integration job) work on this runner
+build and resolve by service name on that network.
+
+Added `make ci` (build, vet, `go test -race`, lint, integration against real Alertmanager v0.34.1,
+docker build) as the local equivalent of the pipeline. Green on 2026-10-04 with test cache cleared.
+The "in CI on a real push" half of the first acceptance criterion is left unchecked.

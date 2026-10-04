@@ -25,7 +25,7 @@ short Findings Summary below.
 
 | # | Story | Depends on | Status | One-line summary |
 |---|---|---|---|---|
-| [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | Not started | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
+| [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | In progress | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
 | [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | Not started | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
 | [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 010 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
 | [040](040-post-alerts/) | `POST /api/v1/alerts` | 020, 030 | Not started | The legacy-Prometheus hot path |
