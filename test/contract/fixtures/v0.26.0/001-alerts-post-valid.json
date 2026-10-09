@@ -1,0 +1,21 @@
+{
+  "step": "alerts-post-valid",
+  "endpoint": "POST /api/v1/alerts",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/alerts",
+    "body": "[\n  {\"labels\":{\"alertname\":\"DiskFull\",\"team\":\"db\",\"cluster\":\"c1\",\"severity\":\"critical\"},\n   \"annotations\":{\"summary\":\"disk almost full\"},\"generatorURL\":\"http://prometheus/graph?g0\"},\n  {\"labels\":{\"alertname\":\"SlowQueries\",\"team\":\"db\",\"cluster\":\"c1\",\"severity\":\"warning\"}},\n  {\"labels\":{\"alertname\":\"HighLatency\",\"team\":\"web\",\"severity\":\"warning\"},\n   \"startsAt\":\"2026-10-04T22:59:10.722Z\",\"endsAt\":\"2026-10-05T00:09:10.722Z\"},\n  {\"labels\":{\"alertname\":\"Orphan\"}},\n  {\"labels\":{\"alertname\":\"AlreadyResolved\",\"team\":\"web\"},\n   \"startsAt\":\"2026-10-04T22:09:10.722Z\",\"endsAt\":\"2026-10-04T22:59:10.722Z\"}\n]\n"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"success\"}"
+  }
+}

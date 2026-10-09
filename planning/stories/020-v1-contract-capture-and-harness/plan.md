@@ -1,6 +1,6 @@
 # 020 — v1 contract capture + diff harness
 
-**Depends on:** 010 · **Status:** Not started
+**Depends on:** 010 · **Status:** Done
 
 ## Goal
 
@@ -15,7 +15,8 @@ and the Rust port (120) are accepted against.
   and the variants legacy clients actually use:
   - `POST /api/v1/alerts` (valid, missing labels, `endsAt` in past, malformed JSON)
   - `GET /api/v1/alerts` with each of `filter`, `receiver`, `silenced`, `inhibited`, `unprocessed`
-  - `GET /api/v1/alerts/groups`
+  - ~~`GET /api/v1/alerts/groups`~~ — does not exist in v0.26.0 (404); recorded as an unknown route
+    instead (see `findings.md`)
   - `GET /api/v1/silences` (with/without `filter`), `GET /api/v1/silence/:id`,
     `POST /api/v1/silences` (create, update-by-id, invalid), `DELETE /api/v1/silence/:id`
   - `GET /api/v1/status`, `GET /api/v1/receivers`

@@ -1,0 +1,15 @@
+{
+  "step": "unknown-method",
+  "endpoint": "unknown v1 routes",
+  "request": {
+    "method": "PUT",
+    "path": "/api/v1/alerts"
+  },
+  "response": {
+    "status": 405,
+    "headers": {
+      "Content-Type": "text/plain; charset=utf-8"
+    },
+    "body": "Method Not Allowed\n"
+  }
+}

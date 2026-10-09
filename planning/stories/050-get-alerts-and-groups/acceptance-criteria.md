@@ -1,6 +1,6 @@
 # 050 — Acceptance criteria
 
-- [ ] Contract harness: every `GET /api/v1/alerts` and `/alerts/groups` fixture diffs clean, including
+- [ ] Contract harness: every `GET /api/v1/alerts` fixture diffs clean, including
       each query-param variant.
 - [ ] A table-driven test covers `filter` strings with `=`, `!=`, `=~`, `!~`, quoted commas, escaped
       quotes, and an invalid string (which returns the same v1 error status/body as 0.26).

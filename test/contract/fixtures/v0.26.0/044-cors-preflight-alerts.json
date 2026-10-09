@@ -1,0 +1,19 @@
+{
+  "step": "cors-preflight-alerts",
+  "endpoint": "OPTIONS /api/v1/*",
+  "request": {
+    "method": "OPTIONS",
+    "path": "/api/v1/alerts"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate"
+    },
+    "body": ""
+  }
+}

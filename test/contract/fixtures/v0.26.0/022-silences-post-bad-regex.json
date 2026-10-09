@@ -1,0 +1,21 @@
+{
+  "step": "silences-post-bad-regex",
+  "endpoint": "POST /api/v1/silences",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/silences",
+    "body": "{\"matchers\":[{\"name\":\"a\",\"value\":\"(\",\"isRegex\":true}],\"startsAt\":\"2026-10-04T23:09:10.722Z\",\"endsAt\":\"2026-10-05T00:09:10.722Z\",\"createdBy\":\"x\",\"comment\":\"y\"}"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"error\",\"errorType\":\"bad_data\",\"error\":\"error parsing regexp: missing closing ): `^(?:()$`\"}"
+  }
+}

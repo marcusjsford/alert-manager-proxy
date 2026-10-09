@@ -1,0 +1,6 @@
+{
+  "target": "http://127.0.0.1:19126",
+  "alertmanagerVersion": "0.26.0",
+  "refTime": "2026-10-04T23:09:10.722675988Z",
+  "scenarioSha256": "6539fe0b55fcaa9b31bad4bd7f160020365bcf3046dbdaaedcf2fdcf6da0ce44"
+}

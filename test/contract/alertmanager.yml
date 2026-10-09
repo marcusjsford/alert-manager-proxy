@@ -1,0 +1,39 @@
+# Fixed Alertmanager config for the v1 contract scenario. Recorded fixtures
+# depend on it: change it and re-record (make contract-record).
+global:
+  resolve_timeout: 5m
+route:
+  receiver: default
+  group_by: [alertname]
+  group_wait: 1s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers: ['team="db"']
+      receiver: db-team
+      group_by: [alertname, cluster]
+      routes:
+        - matchers: ['severity="critical"']
+          receiver: db-pager
+          continue: true
+    - matchers: ['team="web"']
+      receiver: web-team
+inhibit_rules:
+  - source_matchers: ['severity="critical"']
+    target_matchers: ['severity="warning"']
+    equal: [cluster]
+receivers:
+  - name: default
+  - name: db-team
+    webhook_configs:
+      - url: http://127.0.0.1:1/db-team
+  - name: db-pager
+    webhook_configs:
+      - url: http://127.0.0.1:1/db-pager
+        http_config:
+          basic_auth:
+            username: pager
+            password: secret-should-be-masked
+  - name: web-team
+    webhook_configs:
+      - url: http://127.0.0.1:1/web-team

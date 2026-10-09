@@ -1,0 +1,20 @@
+{
+  "step": "silences-get-filter-invalid",
+  "endpoint": "GET /api/v1/silences",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/silences?filter=%7Bbad"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"error\",\"errorType\":\"bad_data\",\"error\":\"bad matcher format: bad\"}"
+  }
+}

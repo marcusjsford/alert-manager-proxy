@@ -1,0 +1,20 @@
+{
+  "step": "silence-get-unknown",
+  "endpoint": "GET /api/v1/silence/{id}",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/silence/00000000-0000-0000-0000-000000000000"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "text/plain; charset=utf-8"
+    },
+    "body": "Error getting silence: \u003cnil\u003e\n"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "step": "alerts-post-empty-labels",
+  "endpoint": "POST /api/v1/alerts",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/alerts",
+    "body": "[{\"labels\":{}}]"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"error\",\"errorType\":\"bad_data\",\"error\":\"at least one label pair required\"}"
+  }
+}

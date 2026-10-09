@@ -17,6 +17,10 @@ update-by-id), `DELETE /api/v1/silence/:id` via their v2 equivalents.
   path behaves identically, including the returned ID.
 - Error mapping: unknown ID, invalid matchers, `endsAt` before `startsAt`.
 - Telemetry: silence ID, matchers, `createdBy` (subject to 030's redaction config), operation type.
+- Inputs recorded in [020's findings](../020-v1-contract-capture-and-harness/findings.md): update is
+  in place only when `startsAt` matches the stored value (else a new ID); unknown ID is a plain-text
+  404 on GET and a 400 envelope on DELETE in v1 but an empty 404 for both in v2; `isEqual` exists in
+  v0.26.0 v1 matchers.
 
 ## Explicit non-goals
 
