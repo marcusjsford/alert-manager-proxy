@@ -1,7 +1,8 @@
 name: CI
 
-# Stage 1: build + unit tests, lint, and pass-through integration against a
-#          real Alertmanager (as a job service). Runs on every push and PR.
+# Stage 1: build + unit tests, lint, pass-through integration against a real
+#          Alertmanager (as a job service), and the v1 contract harness.
+#          Runs on every push and PR. Same checks as `make ci`.
 # Stage 2: docker build, gated on stage 1.
 #
 # No actions/checkout: it is a JS action needing Node.js in the job container,
@@ -61,8 +62,40 @@ jobs:
         env:
           AMP_IT_UPSTREAM_URL: http://alertmanager:9093
 
+  contract:
+    # v1 contract harness (story 020) against proxy -> current Alertmanager.
+    # Alertmanager needs test/contract/alertmanager.yml, which a job service
+    # can't mount (services start before the clone), so the job runs the
+    # release binary itself, checksum-verified. Keep AM_VERSION in step with
+    # test/contract/docker-compose.yml.
+    runs-on: docker
+    container:
+      image: golang:1.26
+    env:
+      AM_VERSION: 0.34.1
+    steps:
+      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
+      - run: |
+          cd /tmp
+          base=https://github.com/prometheus/alertmanager/releases/download/v$AM_VERSION
+          tarball=alertmanager-$AM_VERSION.linux-amd64.tar.gz
+          curl -sSfLO "$base/$tarball"
+          curl -sSfL "$base/sha256sums.txt" | grep " $tarball\$" | sha256sum -c -
+          tar xzf "$tarball"
+      - run: |
+          /tmp/alertmanager-$AM_VERSION.linux-amd64/alertmanager \
+            --config.file=test/contract/alertmanager.yml --storage.path=/tmp/am-data \
+            --web.listen-address=127.0.0.1:9093 > /tmp/alertmanager.log 2>&1 &
+          go build -o /tmp/alertmanager-proxy ./cmd/alertmanager-proxy
+          AMP_UPSTREAM_URL=http://127.0.0.1:9093 AMP_LISTEN_ADDRESS=127.0.0.1:9095 \
+            AMP_ADMIN_LISTEN_ADDRESS=127.0.0.1:9096 /tmp/alertmanager-proxy > /tmp/proxy.log 2>&1 &
+          go run ./test/contract/cmd/contract verify -target http://127.0.0.1:9095 || {
+            status=$?; echo "--- alertmanager.log"; tail -50 /tmp/alertmanager.log
+            echo "--- proxy.log"; tail -50 /tmp/proxy.log; exit $status; }
+        working-directory: ${{ github.workspace }}
+
   docker-build:
-    needs: [build-test, lint, integration]
+    needs: [build-test, lint, integration, contract]
     runs-on: docker
     container:
       image: docker:27-cli
