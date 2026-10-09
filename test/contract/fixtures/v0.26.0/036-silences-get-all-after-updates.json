@@ -1,0 +1,20 @@
+{
+  "step": "silences-get-all-after-updates",
+  "endpoint": "GET /api/v1/silences",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/silences"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"success\",\"data\":[{\"id\":\"bc4af758-6306-4710-ac3a-4ee369ed8900\",\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-04T23:09:20.564904679Z\",\"endsAt\":\"2026-10-05T01:09:10.722Z\",\"updatedAt\":\"2026-10-04T23:09:20.564904679Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\",\"status\":{\"state\":\"active\"}},{\"id\":\"fa08b0d5-15cc-4019-b49e-70d13b8589fd\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false,\"isEqual\":true},{\"name\":\"team\",\"value\":\"web\",\"isRegex\":false,\"isEqual\":true}],\"startsAt\":\"2026-10-04T23:09:20.580264891Z\",\"endsAt\":\"2026-10-05T02:09:10.722Z\",\"updatedAt\":\"2026-10-04T23:09:20.580264891Z\",\"createdBy\":\"alice\",\"comment\":\"narrowed\",\"status\":{\"state\":\"active\"}},{\"id\":\"dfde34ab-7a27-4019-ac6e-d2a3f7815a9c\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false,\"isEqual\":true}],\"startsAt\":\"2026-10-04T23:09:20.563195659Z\",\"endsAt\":\"2026-10-04T23:09:20.580267557Z\",\"updatedAt\":\"2026-10-04T23:09:20.580267557Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance extended\",\"status\":{\"state\":\"expired\"}}]}"
+  }
+}

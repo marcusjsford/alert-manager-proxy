@@ -1,0 +1,21 @@
+{
+  "step": "silences-post-update-extend",
+  "endpoint": "POST /api/v1/silences",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/silences",
+    "body": "{\"id\":\"dfde34ab-7a27-4019-ac6e-d2a3f7815a9c\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false}],\"startsAt\":\"2026-10-04T23:09:20.563195659Z\",\"endsAt\":\"2026-10-05T02:09:10.722Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance extended\"}"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"success\",\"data\":{\"silenceId\":\"dfde34ab-7a27-4019-ac6e-d2a3f7815a9c\"}}"
+  }
+}

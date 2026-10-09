@@ -1,0 +1,20 @@
+{
+  "step": "silence-delete",
+  "endpoint": "DELETE /api/v1/silence/{id}",
+  "request": {
+    "method": "DELETE",
+    "path": "/api/v1/silence/bc4af758-6306-4710-ac3a-4ee369ed8900"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"success\"}"
+  }
+}

@@ -1,0 +1,196 @@
+# The v1 contract scenario. Steps run in order against one fresh Alertmanager
+# (config: alertmanager.yml). Recorded from v0.26.0 into fixtures/v0.26.0/;
+# replayed against the proxy by `make contract`.
+#
+#   ${now}, ${now+1h}, ${now-10m}  timestamps relative to the run's start
+#   ${var}                         a value captured by an earlier step
+#   endpoint: setup                not compared (and wait_for steps never are)
+#
+# Setup steps use API v2, which the proxy passes through, so each v1 endpoint
+# can be verified independently of the others' translation status.
+# Editing this file invalidates the fixtures: re-record with `make contract-record`.
+steps:
+  - name: setup-cluster-ready
+    endpoint: setup
+    method: GET
+    path: /api/v2/status
+    wait_for: {contains: '"status":"ready"', timeout: 30s}
+
+  # ── POST /api/v1/alerts ─────────────────────────────────────────────────
+  - name: alerts-post-valid
+    endpoint: POST /api/v1/alerts
+    method: POST
+    path: /api/v1/alerts
+    body: |
+      [
+        {"labels":{"alertname":"DiskFull","team":"db","cluster":"c1","severity":"critical"},
+         "annotations":{"summary":"disk almost full"},"generatorURL":"http://prometheus/graph?g0"},
+        {"labels":{"alertname":"SlowQueries","team":"db","cluster":"c1","severity":"warning"}},
+        {"labels":{"alertname":"HighLatency","team":"web","severity":"warning"},
+         "startsAt":"${now-10m}","endsAt":"${now+1h}"},
+        {"labels":{"alertname":"Orphan"}},
+        {"labels":{"alertname":"AlreadyResolved","team":"web"},
+         "startsAt":"${now-1h}","endsAt":"${now-10m}"}
+      ]
+  - name: alerts-post-empty-labels
+    endpoint: POST /api/v1/alerts
+    method: POST
+    path: /api/v1/alerts
+    body: '[{"labels":{}}]'
+  - name: alerts-post-missing-labels
+    endpoint: POST /api/v1/alerts
+    method: POST
+    path: /api/v1/alerts
+    body: '[{"annotations":{"summary":"no labels"}}]'
+  - name: alerts-post-object-not-array
+    endpoint: POST /api/v1/alerts
+    method: POST
+    path: /api/v1/alerts
+    body: '{"labels":{"alertname":"X"}}'
+  - name: alerts-post-not-json
+    endpoint: POST /api/v1/alerts
+    method: POST
+    path: /api/v1/alerts
+    body: 'notjson'
+  - name: setup-alerts-processed
+    endpoint: setup
+    method: GET
+    path: /api/v2/alerts
+    wait_for: {contains: 'DiskFull', not_contains: '"unprocessed"'}
+
+  # ── GET /api/v1/alerts ──────────────────────────────────────────────────
+  - {name: alerts-get-all, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}
+  - {name: alerts-get-filter-braces, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?filter=%7Bteam%3D%22db%22%7D'}
+  - {name: alerts-get-filter-no-braces, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?filter=team%3D%22db%22'}
+  - {name: alerts-get-filter-regex-neq, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?filter=%7Bteam%3D~%22d.%2A%22%2Cseverity%21%3D%22critical%22%7D'}
+  - {name: alerts-get-filter-invalid, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?filter=%7Bbad'}
+  - {name: alerts-get-receiver-regex, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?receiver=db-.%2A'}
+  - {name: alerts-get-receiver-invalid, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?receiver=%5B'}
+  - {name: alerts-get-inhibited-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?inhibited=false'}
+  - {name: alerts-get-active-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?active=false'}
+  - {name: alerts-get-unprocessed-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?unprocessed=false'}
+  - {name: alerts-get-bool-invalid, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=maybe'}
+
+  # ── POST /api/v1/silences ───────────────────────────────────────────────
+  - name: silences-post-create
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"matchers":[{"name":"alertname","value":"HighLatency","isRegex":false}],"startsAt":"${now}","endsAt":"${now+1h}","createdBy":"alice","comment":"maintenance"}'
+    capture: {sil1: data.silenceId}
+  - name: silences-post-create-negative-regex
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"matchers":[{"name":"team","value":"d.*","isRegex":true,"isEqual":false}],"startsAt":"${now}","endsAt":"${now+2h}","createdBy":"bob","comment":"everything but db"}'
+    capture: {sil2: data.silenceId}
+  - name: silences-post-no-matchers
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"matchers":[],"startsAt":"${now}","endsAt":"${now+1h}","createdBy":"x","comment":"y"}'
+  - name: silences-post-ends-before-starts
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"matchers":[{"name":"a","value":"b","isRegex":false}],"startsAt":"${now+2h}","endsAt":"${now+1h}","createdBy":"x","comment":"y"}'
+  - name: silences-post-ends-in-past
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"matchers":[{"name":"a","value":"b","isRegex":false}],"startsAt":"${now-2h}","endsAt":"${now-1h}","createdBy":"x","comment":"y"}'
+  - name: silences-post-bad-regex
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"matchers":[{"name":"a","value":"(","isRegex":true}],"startsAt":"${now}","endsAt":"${now+1h}","createdBy":"x","comment":"y"}'
+  - name: silences-post-update-unknown-id
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"id":"00000000-0000-0000-0000-000000000000","matchers":[{"name":"a","value":"b","isRegex":false}],"startsAt":"${now}","endsAt":"${now+1h}","createdBy":"x","comment":"y"}'
+  - name: silences-post-not-json
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: 'notjson'
+
+  # ── alert state after silencing ─────────────────────────────────────────
+  # v0.26.0's v1 GET /alerts does not recompute silence state (it reports the
+  # marker as the pipeline last left it); a v2 GET does, and updates the marker
+  # v1 reads. So settle via v2 first, then compare v1. See story 020 findings.
+  - name: setup-silences-applied
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22Orphan%22'
+    wait_for: {contains: '"suppressed"'}
+  - name: setup-silences-applied-highlatency
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22HighLatency%22'
+    wait_for: {contains: '"suppressed"'}
+  - {name: alerts-get-all-after-silences, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}
+  - {name: alerts-get-silenced-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=false'}
+  - {name: alerts-get-silenced-false-inhibited-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=false&inhibited=false'}
+
+  # ── GET /api/v1/silences, GET /api/v1/silence/{id} ──────────────────────
+  - {name: silences-get-all, endpoint: GET /api/v1/silences, method: GET, path: /api/v1/silences}
+  - {name: silences-get-filter, endpoint: GET /api/v1/silences, method: GET, path: '/api/v1/silences?filter=%7Balertname%3D%22HighLatency%22%7D'}
+  - {name: silences-get-filter-invalid, endpoint: GET /api/v1/silences, method: GET, path: '/api/v1/silences?filter=%7Bbad'}
+  - name: silence-get-by-id
+    endpoint: 'GET /api/v1/silence/{id}'
+    method: GET
+    path: '/api/v1/silence/${sil1}'
+    # Alertmanager stores max(startsAt, now); updating in place requires
+    # sending the stored value back.
+    capture: {sil1start: data.startsAt}
+  - {name: silence-get-unknown, endpoint: 'GET /api/v1/silence/{id}', method: GET, path: /api/v1/silence/00000000-0000-0000-0000-000000000000}
+  - {name: silence-get-malformed-id, endpoint: 'GET /api/v1/silence/{id}', method: GET, path: /api/v1/silence/not-a-uuid}
+
+  # ── updates ─────────────────────────────────────────────────────────────
+  - name: silences-post-update-extend
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"id":"${sil1}","matchers":[{"name":"alertname","value":"HighLatency","isRegex":false}],"startsAt":"${sil1start}","endsAt":"${now+3h}","createdBy":"alice","comment":"maintenance extended"}'
+    capture: {sil1b: data.silenceId}
+  - name: silences-post-update-matchers
+    endpoint: POST /api/v1/silences
+    method: POST
+    path: /api/v1/silences
+    body: '{"id":"${sil1b}","matchers":[{"name":"alertname","value":"HighLatency","isRegex":false},{"name":"team","value":"web","isRegex":false}],"startsAt":"${sil1start}","endsAt":"${now+3h}","createdBy":"alice","comment":"narrowed"}'
+    capture: {sil1c: data.silenceId}
+  - {name: silences-get-all-after-updates, endpoint: GET /api/v1/silences, method: GET, path: /api/v1/silences}
+
+  # ── DELETE /api/v1/silence/{id} ─────────────────────────────────────────
+  - {name: silence-delete, endpoint: 'DELETE /api/v1/silence/{id}', method: DELETE, path: '/api/v1/silence/${sil2}'}
+  - {name: silence-delete-again, endpoint: 'DELETE /api/v1/silence/{id}', method: DELETE, path: '/api/v1/silence/${sil2}'}
+  - {name: silence-delete-unknown, endpoint: 'DELETE /api/v1/silence/{id}', method: DELETE, path: /api/v1/silence/00000000-0000-0000-0000-000000000000}
+  - {name: silence-get-deleted, endpoint: 'GET /api/v1/silence/{id}', method: GET, path: '/api/v1/silence/${sil2}'}
+  - name: setup-delete-applied
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22Orphan%22'
+    wait_for: {contains: '"active"'}
+  - {name: alerts-get-all-after-delete, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}
+
+  # ── status, receivers ───────────────────────────────────────────────────
+  - {name: status-get, endpoint: GET /api/v1/status, method: GET, path: /api/v1/status}
+  - {name: receivers-get, endpoint: GET /api/v1/receivers, method: GET, path: /api/v1/receivers}
+
+  # ── CORS preflight (browser-based legacy clients) ───────────────────────
+  - name: cors-preflight-alerts
+    endpoint: OPTIONS /api/v1/*
+    method: OPTIONS
+    path: /api/v1/alerts
+    headers: {Origin: 'http://legacy-ui.example', Access-Control-Request-Method: POST}
+  - name: cors-preflight-silence
+    endpoint: OPTIONS /api/v1/*
+    method: OPTIONS
+    path: '/api/v1/silence/${sil1c}'
+    headers: {Origin: 'http://legacy-ui.example', Access-Control-Request-Method: DELETE}
+
+  # ── routes v0.26.0 does not have ────────────────────────────────────────
+  - {name: unknown-alert-groups, endpoint: unknown v1 routes, method: GET, path: /api/v1/alerts/groups}
+  - {name: unknown-route, endpoint: unknown v1 routes, method: GET, path: /api/v1/nope}
+  - {name: unknown-method, endpoint: unknown v1 routes, method: PUT, path: /api/v1/alerts}

@@ -27,10 +27,10 @@ short Findings Summary below.
 |---|---|---|---|---|
 | [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | **Done** | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
 | [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010 | Not started | Make the pushed `ci.yml` actually run green on the local Forgejo; until then `make ci` is the gate |
-| [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | Not started | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
+| [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | **Done** | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
 | [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 010 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
 | [040](040-post-alerts/) | `POST /api/v1/alerts` | 020, 030 | Not started | The legacy-Prometheus hot path |
-| [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` + `/alerts/groups` | 040 | Not started | Query-param and `filter=` translation, response reshaping |
+| [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` | 040 | Not started | Query-param and `filter=` translation, response reshaping (`/alerts/groups` turned out not to exist in v0.26.0 v1) |
 | [060](060-silences/) | Silences | 040 | Not started | List/get/create/update/delete, matcher translation |
 | [070](070-status-and-receivers/) | `status` + `receivers` | 040 | Not started | Reshape v2 status into the v1 layout legacy clients parse |
 | [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030 | Not started | Same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
@@ -62,3 +62,16 @@ fixed a 502/504 misclassification of dial timeouts, and an integration test that
 couldn't detect dropped query strings. Go baseline: 6.9 MiB binary, 16.5 MB image, 2.5 MiB idle RSS.
 CI isn't working on the local Forgejo yet; the CI-green criterion moved to story 015 and `make ci`
 is the gate meanwhile.
+
+### 020 — v1 contract capture + diff harness
+
+Recorded 48 v1 exchanges from a real Alertmanager v0.26.0 driven by `test/contract/scenario.yaml`,
+plus a black-box harness (`make contract`) that replays them against any URL and reports
+`PASS`/`FAIL`/`XFAIL`/`XPASS` per endpoint; deterministic across fresh instances (3/3) and 48/48 against
+v0.26.0 itself. Checking the real system corrected the plan: `/api/v1/alerts/groups` doesn't exist in
+0.26 (removed from story 050), v1 alert reads show stale silence state where v2 recomputes it, and
+silence update-by-ID is in place only when the stored `startsAt` is sent back. A v1/v2 comparison
+against 0.34.1 found the differences 040–070 must bridge — notably v2 rejects braced `filter`s,
+returns `405` to CORS preflight, uses `[]`/`{}` where v1 had `null`, and has different error shapes.
+Real legacy-client traffic couldn't be captured from here; story 030's telemetry will answer which
+clients still use v1.

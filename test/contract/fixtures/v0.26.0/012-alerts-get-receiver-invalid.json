@@ -1,0 +1,20 @@
+{
+  "step": "alerts-get-receiver-invalid",
+  "endpoint": "GET /api/v1/alerts",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/alerts?receiver=%5B"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"error\",\"errorType\":\"bad_data\",\"error\":\"failed to parse receiver param: [\"}"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "step": "unknown-alert-groups",
+  "endpoint": "unknown v1 routes",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/alerts/groups"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "text/plain; charset=utf-8"
+    },
+    "body": "404 page not found\n"
+  }
+}

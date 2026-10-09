@@ -16,6 +16,8 @@ Translate the highest-volume legacy call — old Prometheus servers pushing aler
 - Telemetry: `am.alerts.count`, alertnames (span only, bounded list), increment
   `am_proxy_alerts_received_total{client, instance, api_version}` — 080 depends on this metric, and
   075 emits the same metric for v2.
+- Inputs recorded in [020's findings](../020-v1-contract-capture-and-harness/findings.md): v0.26.0
+  validation error strings, v2's different error body shapes, `notjson` vs object-not-array errors.
 
 ## Explicit non-goals
 

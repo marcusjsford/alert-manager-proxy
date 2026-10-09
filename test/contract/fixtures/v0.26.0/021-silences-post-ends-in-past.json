@@ -1,0 +1,21 @@
+{
+  "step": "silences-post-ends-in-past",
+  "endpoint": "POST /api/v1/silences",
+  "request": {
+    "method": "POST",
+    "path": "/api/v1/silences",
+    "body": "{\"matchers\":[{\"name\":\"a\",\"value\":\"b\",\"isRegex\":false}],\"startsAt\":\"2026-10-04T21:09:10.722Z\",\"endsAt\":\"2026-10-04T22:09:10.722Z\",\"createdBy\":\"x\",\"comment\":\"y\"}"
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"error\",\"errorType\":\"bad_data\",\"error\":\"end time can't be in the past\"}"
+  }
+}

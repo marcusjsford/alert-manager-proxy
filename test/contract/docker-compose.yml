@@ -1,0 +1,21 @@
+# Environments for the v1 contract harness.
+#   profile record: Alertmanager v0.26.0, the last release with API v1
+#   profile verify: current Alertmanager behind the proxy built from this repo
+services:
+  am-v026:
+    profiles: [record]
+    image: prom/alertmanager:v0.26.0
+    volumes: ["./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"]
+    ports: ["127.0.0.1:19126:9093"]
+  am-current:
+    profiles: [verify]
+    image: prom/alertmanager:${AM_VERSION:-v0.34.1}
+    volumes: ["./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"]
+  proxy:
+    profiles: [verify]
+    build: ../..
+    image: alertmanager-proxy:contract
+    environment:
+      AMP_UPSTREAM_URL: http://am-current:9093
+    ports: ["127.0.0.1:19195:9095"]
+    depends_on: [am-current]

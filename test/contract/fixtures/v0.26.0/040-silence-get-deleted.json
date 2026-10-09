@@ -1,0 +1,20 @@
+{
+  "step": "silence-get-deleted",
+  "endpoint": "GET /api/v1/silence/{id}",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/silence/bc4af758-6306-4710-ac3a-4ee369ed8900"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"success\",\"data\":{\"id\":\"bc4af758-6306-4710-ac3a-4ee369ed8900\",\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-04T23:09:20.564904679Z\",\"endsAt\":\"2026-10-04T23:09:20.581501535Z\",\"updatedAt\":\"2026-10-04T23:09:20.581501535Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\",\"status\":{\"state\":\"expired\"}}}"
+  }
+}

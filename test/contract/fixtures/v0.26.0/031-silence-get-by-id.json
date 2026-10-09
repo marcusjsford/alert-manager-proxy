@@ -1,0 +1,20 @@
+{
+  "step": "silence-get-by-id",
+  "endpoint": "GET /api/v1/silence/{id}",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/silence/dfde34ab-7a27-4019-ac6e-d2a3f7815a9c"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"success\",\"data\":{\"id\":\"dfde34ab-7a27-4019-ac6e-d2a3f7815a9c\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false,\"isEqual\":true}],\"startsAt\":\"2026-10-04T23:09:20.563195659Z\",\"endsAt\":\"2026-10-05T00:09:10.722Z\",\"updatedAt\":\"2026-10-04T23:09:20.563195659Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance\",\"status\":{\"state\":\"active\"}}}"
+  }
+}
