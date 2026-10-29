@@ -1,0 +1,62 @@
+# Owned development-only pipeline; does not reconfigure the shared collector.
+x-proxy: &proxy
+  build: ../..
+  image: alertmanager-proxy:telemetry
+  command: ["-config", "/etc/amp/proxy.yml"]
+  volumes: ["./proxy.yml:/etc/amp/proxy.yml:ro"]
+  depends_on:
+    alertmanager: {condition: service_healthy}
+    collector: {condition: service_started}
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.5-alpine
+    environment:
+      CLICKHOUSE_DB: otel
+      CLICKHOUSE_USER: amp
+      CLICKHOUSE_PASSWORD: amp-lab-only
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ports: ["127.0.0.1:19523:8123"]
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user", "amp", "--password", "amp-lab-only", "--query", "SELECT 1"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.145.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes: ["./collector.yml:/etc/otelcol-contrib/config.yaml:ro"]
+    ports: ["127.0.0.1:19517:4317", "127.0.0.1:19518:4318", "127.0.0.1:19533:13133"]
+    depends_on:
+      clickhouse: {condition: service_healthy}
+
+  alertmanager:
+    image: prom/alertmanager:v0.34.1
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9093/-/ready"]
+      interval: 1s
+      retries: 30
+
+  proxy-grpc:
+    <<: *proxy
+    environment:
+      AMP_SERVICE_INSTANCE_ID: am-grpc
+      AMP_OTLP_PROTOCOL: grpc
+      AMP_OTLP_ENDPOINT: http://collector:4317
+    ports: ["127.0.0.1:19595:9095"]
+
+  proxy-http:
+    <<: *proxy
+    environment:
+      AMP_SERVICE_INSTANCE_ID: am-http
+      AMP_OTLP_PROTOCOL: http/protobuf
+      AMP_OTLP_ENDPOINT: http://collector:4318
+    ports: ["127.0.0.1:19596:9095"]
+
+  proxy-off:
+    <<: *proxy
+    environment:
+      AMP_TELEMETRY_ENABLED: "false"
+    ports: ["127.0.0.1:19597:9095"]

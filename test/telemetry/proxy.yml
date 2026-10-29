@@ -1,0 +1,26 @@
+upstream:
+  url: http://alertmanager:9093
+shutdown_timeout: 3s
+telemetry:
+  enabled: true
+  instance_id: am-off
+  export_timeout: 500ms
+  batch_interval: 200ms
+  metric_interval: 1s
+clients:
+  rules:
+    - name: legacy-prometheus
+      user_agent: '^Prometheus/'
+    - name: lab-smoke
+      user_agent: '^AmpSmoke/'
+    - name: lab-benchmark
+      user_agent: '^AmpBench/'
+    - name: dashboard
+      basic_auth_user: grafana
+    - name: script
+      header: X-Client-Name
+      header_value: lab-script
+redaction:
+  headers: [Authorization, X-Lab-Secret]
+  silence_comment: true
+  silence_created_by: true

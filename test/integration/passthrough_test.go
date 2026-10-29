@@ -42,7 +42,7 @@ func setup(t *testing.T) (direct, proxied target) {
 	if err := cfg.Validate(); err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(server.Handler(cfg, slog.New(slog.NewTextHandler(io.Discard, nil))))
+	srv := httptest.NewServer(server.Handler(cfg, slog.New(slog.NewTextHandler(io.Discard, nil)), nil))
 	t.Cleanup(srv.Close)
 	return target{"direct", upstream}, target{"proxied", srv.URL}
 }

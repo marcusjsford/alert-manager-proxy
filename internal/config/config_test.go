@@ -72,3 +72,41 @@ func TestValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestTelemetryAndIdentityValidation(t *testing.T) {
+	cases := []struct {
+		name   string
+		mutate func(*Config)
+	}{
+		{"protocol", func(c *Config) { c.Telemetry.Protocol = "udp" }},
+		{"credentials", func(c *Config) { c.Telemetry.Endpoint = "http://user:secret@collector:4317" }},
+		{"timeout", func(c *Config) { c.Telemetry.ExportTimeout = 0 }},
+		{"missing instance", func(c *Config) { c.Telemetry.Enabled = true }},
+		{"IP instance", func(c *Config) { c.Telemetry.Enabled = true; c.Telemetry.InstanceID = "192.0.2.1" }},
+		{"grpc URL path", func(c *Config) { c.Telemetry.Endpoint = "http://collector:4317/prefix" }},
+		{"bad trusted CIDR", func(c *Config) { c.Clients.TrustedProxies = []string{"10.0.0.1"} }},
+		{"unbounded name", func(c *Config) { c.Clients.Rules = []ClientRule{{Name: "raw name", UserAgent: ".*"}} }},
+		{"IP name", func(c *Config) { c.Clients.Rules = []ClientRule{{Name: "192.0.2.1", UserAgent: ".*"}} }},
+		{"invalid regex", func(c *Config) { c.Clients.Rules = []ClientRule{{Name: "legacy", UserAgent: "["}} }},
+		{"empty rule", func(c *Config) { c.Clients.Rules = []ClientRule{{Name: "legacy"}} }},
+		{"incomplete header", func(c *Config) { c.Clients.Rules = []ClientRule{{Name: "legacy", Header: "X-Client"}} }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := Defaults()
+			cfg.Upstream.URL = "http://am:9093"
+			tc.mutate(&cfg)
+			if err := cfg.Validate(); err == nil {
+				t.Fatal("invalid configuration accepted")
+			}
+		})
+	}
+	cfg, err := Load("", env(map[string]string{
+		"AMP_UPSTREAM_URL": "http://am:9093", "AMP_TELEMETRY_ENABLED": "true",
+		"AMP_OTLP_PROTOCOL": "http/protobuf", "AMP_OTLP_ENDPOINT": "http://collector:4318",
+		"AMP_SERVICE_INSTANCE_ID": "am-1", "AMP_OTLP_EXPORT_TIMEOUT": "250ms",
+	}))
+	if err != nil || !cfg.Telemetry.Enabled || cfg.Telemetry.InstanceID != "am-1" || cfg.Telemetry.ExportTimeout != 250*time.Millisecond {
+		t.Fatalf("telemetry overrides: %+v, %v", cfg.Telemetry, err)
+	}
+}

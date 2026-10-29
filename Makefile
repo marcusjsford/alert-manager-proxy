@@ -5,10 +5,11 @@ AM_PORT ?= 19093
 COMPOSE = docker compose -f test/integration/docker-compose.yml -p amp-integration
 CONTRACT_COMPOSE = docker compose -f test/contract/docker-compose.yml -p amp-contract
 LAB_COMPOSE = docker compose -f test/lab/docker-compose.yml -p amp-lab
+TELEMETRY_COMPOSE = docker compose -f test/telemetry/docker-compose.yml -p amp-telemetry
 CONTRACT = go run ./test/contract/cmd/contract
 FIXTURES = test/contract/fixtures/v0.26.0
 
-.PHONY: build test lint integration contract contract-record contract-determinism lab lab-check lab-down docker ci clean
+.PHONY: build test lint integration contract contract-record contract-determinism lab lab-check lab-down telemetry telemetry-check telemetry-down docker ci clean
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/alertmanager-proxy ./cmd/alertmanager-proxy
@@ -60,6 +61,15 @@ lab-check:
 
 lab-down:
 	$(LAB_COMPOSE) down -v
+
+telemetry:
+	$(TELEMETRY_COMPOSE) up -d --build --wait --wait-timeout 90
+
+telemetry-check:
+	go test -race -tags telemetry -count=1 -timeout=3m -v ./test/telemetry/
+
+telemetry-down:
+	$(TELEMETRY_COMPOSE) down -v
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .

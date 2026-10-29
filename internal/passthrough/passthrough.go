@@ -19,6 +19,7 @@ type Options struct {
 	DialTimeout           time.Duration
 	ResponseHeaderTimeout time.Duration
 	Logger                *slog.Logger
+	WrapTransport         func(http.RoundTripper) http.RoundTripper
 }
 
 // New returns a handler that proxies every request to upstream.
@@ -30,17 +31,21 @@ func New(upstream *url.URL, opts Options) http.Handler {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.DialContext = (&net.Dialer{Timeout: opts.DialTimeout, KeepAlive: 30 * time.Second}).DialContext
 	transport.ResponseHeaderTimeout = opts.ResponseHeaderTimeout
+	var upstreamTransport http.RoundTripper = transport
+	if opts.WrapTransport != nil {
+		upstreamTransport = opts.WrapTransport(transport)
+	}
 
 	return &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetURL(upstream)
 			r.SetXForwarded()
 		},
-		Transport: transport,
+		Transport: upstreamTransport,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			status := statusFor(err)
-			logger.Warn("upstream request failed",
-				"method", r.Method, "path", r.URL.Path, "status", status, "error", err)
+			logger.WarnContext(r.Context(), "upstream request failed",
+				"method", r.Method, "path", r.URL.Path, "status", status, "error", http.StatusText(status))
 			w.WriteHeader(status)
 		},
 	}

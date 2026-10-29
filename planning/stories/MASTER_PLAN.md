@@ -32,7 +32,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | **Done** | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
 | [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010, 020 | **Done** | Five-job Forgejo CI green; real mutation fails integration; local/remote check parity verified |
 | [025](025-client-inventory-and-upgrade-target/) | Client inventory + Docker baseline | 015 | **Done** | Confirmed 0.26→0.34.1/three-instance Kubernetes contract; Docker lab and real v1-capable sender verified; production gaps tracked |
-| [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 015 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
+| [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 015 | **Done** | Opt-in OTLP traces/metrics/logs; bounded identities and labels, redaction/correlation, real ClickHouse and outage verification |
 | [035](035-shared-v1-http-contract/) | Shared v1 HTTP contract | 020, 030 | Not started | Envelopes, routing, CORS/preflight, cache headers, unknown paths/methods, and shared upstream error handling |
 | [040](040-post-alerts/) | `POST /api/v1/alerts` | 025, 035 | Not started | First delivery milestone: real legacy Prometheus sends firing/resolved alerts to a test receiver |
 | [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` | 040 | Not started | Query-param and `filter=` translation, response reshaping (`/alerts/groups` turned out not to exist in v0.26.0 v1) |
@@ -79,6 +79,16 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 030 — Telemetry foundation + bounded client identity
+
+Added opt-in gRPC/HTTP OTLP traces, metrics and correlated JSON/OTLP logs with per-Alertmanager
+identity, ordered client rules and trusted forwarding-chain resolution. Wire-format tests verify
+all signals, redaction, label bounds, propagation and unchanged payloads; the owned Collector/
+ClickHouse pipeline proves persisted parent/child traces, matching log IDs and request metrics for
+both protocols. Real collector outage preserved 100 upstream responses, with clean proxy shutdown
+in 0.851s; the recorded development p99 comparison was 1.693ms off / 3.447ms on (1.753ms difference).
+Full local CI passes; v1 translation and deep v2 inspection remain in their later endpoint stories.
 
 ### 025 — Confirmed upgrade contract + Docker development baseline
 
