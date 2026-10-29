@@ -34,7 +34,7 @@ func newProxy(t *testing.T, upstreamURL string, mutate func(*config.Config)) *ht
 		t.Fatal(err)
 	}
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-	srv := httptest.NewServer(Handler(cfg, logger))
+	srv := httptest.NewServer(Handler(cfg, logger, nil))
 	t.Cleanup(srv.Close)
 	return srv
 }

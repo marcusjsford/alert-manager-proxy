@@ -23,6 +23,9 @@ type Config struct {
 	AdminListenAddress string        `yaml:"admin_listen_address"`
 	Upstream           Upstream      `yaml:"upstream"`
 	ShutdownTimeout    time.Duration `yaml:"shutdown_timeout"`
+	Telemetry          Telemetry     `yaml:"telemetry"`
+	Clients            Clients       `yaml:"clients"`
+	Redaction          Redaction     `yaml:"redaction"`
 }
 
 // Upstream is the single Alertmanager this proxy fronts (ADR decision 2).
@@ -45,6 +48,13 @@ func Defaults() Config {
 			ResponseHeaderTimeout: 30 * time.Second,
 		},
 		ShutdownTimeout: 15 * time.Second,
+		Telemetry: Telemetry{
+			ServiceName: "alertmanager-proxy", Environment: "development",
+			Protocol: "grpc", Endpoint: "http://localhost:4317",
+			ExportTimeout: 2 * time.Second, BatchInterval: time.Second,
+			MetricInterval: 15 * time.Second,
+		},
+		Redaction: Redaction{Headers: []string{"Authorization", "Proxy-Authorization"}, SilenceComment: true, SilenceCreatedBy: true},
 	}
 }
 
@@ -75,6 +85,11 @@ func applyEnv(cfg *Config, getenv func(string) string) error {
 		"AMP_LISTEN_ADDRESS":       &cfg.ListenAddress,
 		"AMP_ADMIN_LISTEN_ADDRESS": &cfg.AdminListenAddress,
 		"AMP_UPSTREAM_URL":         &cfg.Upstream.URL,
+		"AMP_SERVICE_NAME":         &cfg.Telemetry.ServiceName,
+		"AMP_SERVICE_INSTANCE_ID":  &cfg.Telemetry.InstanceID,
+		"AMP_ENVIRONMENT":          &cfg.Telemetry.Environment,
+		"AMP_OTLP_PROTOCOL":        &cfg.Telemetry.Protocol,
+		"AMP_OTLP_ENDPOINT":        &cfg.Telemetry.Endpoint,
 	}
 	for key, dst := range strs {
 		if v := getenv(key); v != "" {
@@ -85,6 +100,9 @@ func applyEnv(cfg *Config, getenv func(string) string) error {
 		"AMP_UPSTREAM_DIAL_TIMEOUT":            &cfg.Upstream.DialTimeout,
 		"AMP_UPSTREAM_RESPONSE_HEADER_TIMEOUT": &cfg.Upstream.ResponseHeaderTimeout,
 		"AMP_SHUTDOWN_TIMEOUT":                 &cfg.ShutdownTimeout,
+		"AMP_OTLP_EXPORT_TIMEOUT":              &cfg.Telemetry.ExportTimeout,
+		"AMP_OTLP_BATCH_INTERVAL":              &cfg.Telemetry.BatchInterval,
+		"AMP_OTLP_METRIC_INTERVAL":             &cfg.Telemetry.MetricInterval,
 	}
 	for key, dst := range durs {
 		if v := getenv(key); v != "" {
@@ -93,6 +111,11 @@ func applyEnv(cfg *Config, getenv func(string) string) error {
 				return fmt.Errorf("%s: %w", key, err)
 			}
 			*dst = d
+		}
+	}
+	if v := getenv("AMP_TELEMETRY_ENABLED"); v != "" {
+		if err := parseTelemetryEnabled(cfg, v); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -113,7 +136,7 @@ func (c Config) Validate() error {
 	if c.Upstream.URL == "" {
 		errs = append(errs, errors.New("upstream.url is required"))
 	} else if u, err := url.Parse(c.Upstream.URL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		errs = append(errs, fmt.Errorf("upstream.url %q must be an absolute http(s) URL", c.Upstream.URL))
+		errs = append(errs, errors.New("upstream.url must be an absolute http(s) URL"))
 	}
 	if c.Upstream.DialTimeout <= 0 {
 		errs = append(errs, errors.New("upstream.dial_timeout must be positive"))
@@ -124,6 +147,7 @@ func (c Config) Validate() error {
 	if c.ShutdownTimeout <= 0 {
 		errs = append(errs, errors.New("shutdown_timeout must be positive"))
 	}
+	errs = append(errs, c.Telemetry.Validate(), c.Clients.Validate())
 	return errors.Join(errs...)
 }
 

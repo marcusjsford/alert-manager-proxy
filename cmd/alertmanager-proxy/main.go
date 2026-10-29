@@ -17,6 +17,7 @@ import (
 
 	"alertmanager-proxy/internal/config"
 	"alertmanager-proxy/internal/server"
+	"alertmanager-proxy/internal/telemetry"
 )
 
 // version is set at build time via -ldflags "-X main.version=...".
@@ -46,9 +47,25 @@ func run() error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	obs, err := telemetry.New(ctx, cfg, version, os.Stderr)
+	if err != nil {
+		return err
+	}
+	logger = obs.Logger
+	telemetryStopped := false
+	defer func() {
+		if telemetryStopped {
+			return
+		}
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+		if err := obs.Shutdown(cleanupCtx); err != nil {
+			logger.Warn("telemetry shutdown incomplete")
+		}
+	}()
 
 	servers := []*http.Server{
-		newServer(cfg.ListenAddress, server.Handler(cfg, logger), logger),
+		newServer(cfg.ListenAddress, server.Handler(cfg, logger, obs), logger),
 		newServer(cfg.AdminListenAddress, server.AdminHandler(), logger),
 	}
 	errc := make(chan error, len(servers))
@@ -60,7 +77,7 @@ func run() error {
 		go func() { errc <- srv.Serve(ln) }()
 	}
 	logger.Info("started", "version", version, "listen", cfg.ListenAddress,
-		"admin_listen", cfg.AdminListenAddress, "upstream", cfg.Upstream.URL)
+		"admin_listen", cfg.AdminListenAddress, "upstream", cfg.UpstreamURL().Host)
 
 	select {
 	case <-ctx.Done():
@@ -71,12 +88,16 @@ func run() error {
 	}
 
 	logger.Info("shutting down", "timeout", cfg.ShutdownTimeout)
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+	drainCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 	defer cancel()
 	var errs []error
 	for _, srv := range servers {
-		errs = append(errs, srv.Shutdown(shutdownCtx))
+		errs = append(errs, srv.Shutdown(drainCtx))
 	}
+	if err := obs.Shutdown(drainCtx); err != nil {
+		logger.Warn("telemetry shutdown incomplete")
+	}
+	telemetryStopped = true
 	return errors.Join(errs...)
 }
 

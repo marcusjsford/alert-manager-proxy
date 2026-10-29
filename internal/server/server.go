@@ -7,6 +7,7 @@ import (
 
 	"alertmanager-proxy/internal/config"
 	"alertmanager-proxy/internal/passthrough"
+	"alertmanager-proxy/internal/telemetry"
 	v1 "alertmanager-proxy/internal/v1"
 )
 
@@ -16,20 +17,28 @@ import (
 // Dispatch is a plain prefix check rather than http.ServeMux: ServeMux cleans
 // paths and redirects (e.g. "//" or "/./"), which would alter pass-through
 // requests before the upstream ever saw them.
-func Handler(cfg config.Config, logger *slog.Logger) http.Handler {
+func Handler(cfg config.Config, logger *slog.Logger, obs *telemetry.Runtime) http.Handler {
 	v1Router := v1.NewRouter()
-	pass := passthrough.New(cfg.UpstreamURL(), passthrough.Options{
+	opts := passthrough.Options{
 		DialTimeout:           cfg.Upstream.DialTimeout,
 		ResponseHeaderTimeout: cfg.Upstream.ResponseHeaderTimeout,
 		Logger:                logger,
-	})
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	}
+	if obs != nil {
+		opts.WrapTransport = obs.Transport
+	}
+	pass := passthrough.New(cfg.UpstreamURL(), opts)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if v1.Owns(r.URL.Path) {
 			v1Router.ServeHTTP(w, r)
 			return
 		}
 		pass.ServeHTTP(w, r)
 	})
+	if obs != nil {
+		return obs.Handler(handler)
+	}
+	return handler
 }
 
 // AdminHandler serves the proxy's own health, independent of the upstream's.

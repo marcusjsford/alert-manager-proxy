@@ -1,6 +1,6 @@
 # 030 — OTel foundation + client identity
 
-**Depends on:** 015 · **Status:** Not started
+**Depends on:** 015 · **Status:** Done
 
 ## Goal
 
@@ -26,11 +26,17 @@ across traces, metrics and logs — per [ADR decision 4](../../ADR.md#decision-4
 - Redaction config for headers (`Authorization`) and optionally silence `comment`/`createdBy`.
 - Basic request/error/latency/client queries support MVP cutover (074) before full dashboards exist.
   Collector unavailability must not block request forwarding or make accepted writes fail.
+- Verify a project-owned Collector Contrib → ClickHouse Docker pipeline on this development
+  machine, for both OTLP protocols; production endpoint verification remains part of 074.
+- Default to disabled export until configured. Enabled instances require an explicit bounded
+  non-IP Alertmanager identity; SDK URL/error redaction applies before export.
 
 ## Explicit non-goals
 
-- Dashboards (100). Partial-fanout logic (080).
+- Dashboards (100). Partial-fanout logic (080). V1 translation (035/040–070) and deep v2 body
+  inspection (075). Changing the shared collector or production infrastructure.
 
 ## Key files
 
-`internal/telemetry/`, `internal/clientid/`, `internal/middleware/`.
+`internal/telemetry/` (including HTTP middleware), `internal/clientid/`, config/main/server wiring,
+`test/telemetry/`, `docs/telemetry.md`, `deploy/queries/request_visibility.sql`.
