@@ -1,6 +1,6 @@
 # 050 — `GET /api/v1/alerts`
 
-**Depends on:** 040 · **Status:** Not started
+**Depends on:** 040 · **Status:** Done
 
 ## Goal
 

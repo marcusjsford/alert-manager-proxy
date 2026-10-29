@@ -3,7 +3,7 @@
   "endpoint": "GET /api/v1/silence/{id}",
   "request": {
     "method": "GET",
-    "path": "/api/v1/silence/dfde34ab-7a27-4019-ac6e-d2a3f7815a9c"
+    "path": "/api/v1/silence/362e5ffc-c147-4e9b-840d-07237fd5fdb3"
   },
   "response": {
     "status": 200,
@@ -15,6 +15,6 @@
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Content-Type": "application/json"
     },
-    "body": "{\"status\":\"success\",\"data\":{\"id\":\"dfde34ab-7a27-4019-ac6e-d2a3f7815a9c\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false,\"isEqual\":true}],\"startsAt\":\"2026-10-04T23:09:20.563195659Z\",\"endsAt\":\"2026-10-05T00:09:10.722Z\",\"updatedAt\":\"2026-10-04T23:09:20.563195659Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance\",\"status\":{\"state\":\"active\"}}}"
+    "body": "{\"status\":\"success\",\"data\":{\"id\":\"362e5ffc-c147-4e9b-840d-07237fd5fdb3\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false,\"isEqual\":true}],\"startsAt\":\"2026-10-29T12:43:08.576870545Z\",\"endsAt\":\"2026-10-29T13:42:58.921Z\",\"updatedAt\":\"2026-10-29T12:43:08.576870545Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance\",\"status\":{\"state\":\"active\"}}}"
   }
 }

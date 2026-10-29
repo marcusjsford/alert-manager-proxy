@@ -74,7 +74,6 @@ func TestPreflightBarePrefixRedirectsLikeV026(t *testing.T) {
 func TestKnownRoutesRemainExplicit501(t *testing.T) {
 	router := testRouter(t)
 	cases := []struct{ method, path string }{
-		{http.MethodGet, "/api/v1/alerts"},
 		{http.MethodPost, "/api/v1/silences"},
 		{http.MethodGet, "/api/v1/silences"},
 		{http.MethodGet, "/api/v1/silence/abc"},
@@ -167,22 +166,22 @@ func TestUnknownTrailingSlashStays404(t *testing.T) {
 func TestMethodHandlersAreIndependent(t *testing.T) {
 	router := testRouter(t)
 	for i := range router.routes {
-		if router.routes[i].match(alertsPath) {
+		if router.routes[i].match(silencesPath) {
 			router.routes[i].handlers[http.MethodPost] = func(w http.ResponseWriter, _ *http.Request) {
 				envelope.Success(w)
 			}
 		}
 	}
 
-	post := serve(t, router, http.MethodPost, alertsPath)
+	post := serve(t, router, http.MethodPost, silencesPath)
 	if post.Code != http.StatusOK || post.Body.String() != `{"status":"success"}` {
 		t.Fatalf("POST = %d %q", post.Code, post.Body.String())
 	}
-	get := serve(t, router, http.MethodGet, alertsPath)
+	get := serve(t, router, http.MethodGet, silencesPath)
 	if get.Code != http.StatusNotImplemented {
 		t.Fatalf("GET = %d, want the untouched 501", get.Code)
 	}
-	put := serve(t, router, http.MethodPut, alertsPath)
+	put := serve(t, router, http.MethodPut, silencesPath)
 	if put.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("PUT = %d, want 405", put.Code)
 	}
