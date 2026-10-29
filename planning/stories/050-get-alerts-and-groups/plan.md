@@ -10,7 +10,7 @@ Serve v1 alert queries from v2, reshaped exactly as 0.26 returned them.
 
 - Query params: v1 `filter` (a single `{a="b",c=~"d"}` matcher-set string) → v2 repeated `filter`
   params, parsed with Alertmanager's own `pkg/labels` parser (ADR decision 1); `receiver`,
-  `silenced`, `inhibited`, `unprocessed` mapped with v1 defaults.
+  `silenced`, `inhibited`, `unprocessed`, `active` mapped with v1 defaults.
 - Response reshaping: v2 `receivers: [{name}]` → v1 strings; status block; fields v2 adds
   (`updatedAt`) dropped; fields v1 had that v2 lacks — decided per field, recorded, and counted as
   lossy per ADR decision 4.
@@ -20,6 +20,7 @@ Serve v1 alert queries from v2, reshaped exactly as 0.26 returned them.
 - Inputs recorded in [020's findings](../020-v1-contract-capture-and-harness/findings.md): v2 rejects
   braced filters, `active` is also a v1 param, v1 `null` vs v2 `[]`, `mutedBy`, stale-vs-live state.
 - Telemetry: parsed filter and flags as span attributes.
+- Reuse 035's HTTP contract and remove the GET alerts pending entry when its fixtures pass.
 
 ## Explicit non-goals
 
@@ -27,4 +28,4 @@ Serve v1 alert queries from v2, reshaped exactly as 0.26 returned them.
 
 ## Key files
 
-`internal/v1/alerts_get.go`, `internal/v1/groups.go`, `internal/v1/filter/`.
+`internal/v1/alerts_get.go`, `internal/v1/filter/`.

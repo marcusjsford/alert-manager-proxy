@@ -9,3 +9,5 @@
       proxy to a current Alertmanager, which notifies a test receiver.
 - [ ] Span carries `am.api.version=v1`, `http.route=/api/v1/alerts`, `am.alerts.count`, client
       identity; `am_proxy_alerts_received_total` increments by the alert count.
+- [ ] Failed/timed-out upstream alert writes do not return v1 success; retry/recovery behaviour is
+      exercised and this endpoint's pending entry is removed once all its contract cases pass.

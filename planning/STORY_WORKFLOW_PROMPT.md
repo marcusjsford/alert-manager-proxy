@@ -16,8 +16,8 @@ reading this to start work, this whole file is your instructions.
 - `MASTER_PLAN.md` — links to source docs (`../ADR.md`), a workflow section (pointing back here), and
   an ordered story index table (story, status, one-line summary).
 - `NNN-slug/` — one folder per story, numbered in steps of 10 so a story can be inserted later
-  without renumbering. Number order is planned implementation order, not a hard sequence — see
-  "Dependencies" below.
+  without renumbering. Existing IDs and folder names stay stable when priorities change; the ordered
+  index table in `MASTER_PLAN.md` is the execution order, subject to dependencies.
   - `plan.md` — header line (`**Depends on:** … · **Status:** …`), goal, scope, explicit non-goals,
     key files. Points at ADR sections rather than duplicating their prose.
   - `acceptance-criteria.md` — a checklist. Every item must be independently, concretely verifiable —
@@ -29,8 +29,9 @@ reading this to start work, this whole file is your instructions.
 
 ## The workflow
 
-1. **Pick a story.** Lowest-numbered story in `MASTER_PLAN.md` that is not `Done` and whose
-   `Depends on` stories are `Done`. If nothing qualifies, say so — don't skip a dependency to find
+1. **Pick a story.** First story in the ordered index table in `MASTER_PLAN.md` that is not `Done`
+   and whose `Depends on` stories are `Done`. Resume an existing `In progress` story before starting
+   another. If nothing qualifies, say so — don't skip a dependency to find
    something to do. **Branch before touching anything**: a worktree for `story/NNN-slug` off latest
    `main` (see "Git discipline").
 2. **Read before writing.** The story's `plan.md` and `acceptance-criteria.md` in full, then the ADR

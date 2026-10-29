@@ -1,12 +1,13 @@
 # 075 — v2 request-level instrumentation
 
-**Depends on:** 030 · **Status:** Not started
+**Depends on:** 030, 074 · **Status:** Not started
 
 ## Goal
 
 Give v2 pass-through calls the same telemetry depth as translated v1 calls
 ([ADR decision 4](../../ADR.md#decision-4--telemetry-model), [decision 6](../../ADR.md#decision-6--the-proxy-is-permanent-the-v1-layer-is-what-retires)).
 After v1 retires, v2 is all the proxy sees — this story is what makes the proxy worth keeping.
+This deep inspection is post-MVP; 030's request-level visibility already supports initial cutover.
 
 ## Scope
 

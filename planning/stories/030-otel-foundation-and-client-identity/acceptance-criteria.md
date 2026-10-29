@@ -14,3 +14,5 @@
 - [ ] Telemetry visible end-to-end in the real collector → ClickHouse pipeline (query + result
       pasted into `findings.md`).
 - [ ] Overhead recorded: p99 added latency of the pass-through path with telemetry on vs. off.
+- [ ] With the collector unavailable, client requests still reach the upstream and return their
+      normal responses; export failures are bounded/observable and shutdown remains bounded.
