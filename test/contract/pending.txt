@@ -9,5 +9,3 @@ GET /api/v1/silence/{id}
 DELETE /api/v1/silence/{id}
 GET /api/v1/status
 GET /api/v1/receivers
-OPTIONS /api/v1/*
-unknown v1 routes

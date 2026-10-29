@@ -1,6 +1,6 @@
 # 035 — Shared v1 HTTP contract
 
-**Depends on:** 020, 030 · **Status:** Not started
+**Depends on:** 020, 030 · **Status:** Done
 
 ## Goal
 

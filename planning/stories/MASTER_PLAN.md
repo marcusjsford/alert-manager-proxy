@@ -33,7 +33,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010, 020 | **Done** | Five-job Forgejo CI green; real mutation fails integration; local/remote check parity verified |
 | [025](025-client-inventory-and-upgrade-target/) | Client inventory + Docker baseline | 015 | **Done** | Confirmed 0.26→0.34.1/three-instance Kubernetes contract; Docker lab and real v1-capable sender verified; production gaps tracked |
 | [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 015 | **Done** | Opt-in OTLP traces/metrics/logs; bounded identities and labels, redaction/correlation, real ClickHouse and outage verification |
-| [035](035-shared-v1-http-contract/) | Shared v1 HTTP contract | 020, 030 | Not started | Envelopes, routing, CORS/preflight, cache headers, unknown paths/methods, and shared upstream error handling |
+| [035](035-shared-v1-http-contract/) | Shared v1 HTTP contract | 020, 030 | **Done** | Envelopes, routing, CORS/preflight, cache headers, unknown paths/methods, and shared upstream error handling |
 | [040](040-post-alerts/) | `POST /api/v1/alerts` | 025, 035 | Not started | First delivery milestone: real legacy Prometheus sends firing/resolved alerts to a test receiver |
 | [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` | 040 | Not started | Query-param and `filter=` translation, response reshaping (`/alerts/groups` turned out not to exist in v0.26.0 v1) |
 | [060](060-silences/) | Silences | 040 | Not started | List/get/create/update/delete, matcher translation |
@@ -79,6 +79,16 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 035 — Shared v1 HTTP contract
+
+Added shared v0.26 envelopes, CORS/cache/Content-Type headers, plain-text exceptions and
+method-aware v1 routing, including the recorded 404/405/preflight behaviour and trailing-slash
+redirects. All known endpoints stay explicit 501; unknown routes no longer masquerade as
+unimplemented. A context-aware v2 client preserves auth and repeated queries, enforces the
+existing timeouts, refuses redirects, maps refused/slow/cancelled/non-2xx calls truthfully and
+wires the 030 transport, so failed writes can never look successful. Contract OPTIONS and unknown
+route/method fixtures pass; the remaining 0/48 endpoint XFAILs are unchanged.
 
 ### 030 — Telemetry foundation + bounded client identity
 

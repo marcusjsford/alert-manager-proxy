@@ -18,7 +18,13 @@ import (
 // paths and redirects (e.g. "//" or "/./"), which would alter pass-through
 // requests before the upstream ever saw them.
 func Handler(cfg config.Config, logger *slog.Logger, obs *telemetry.Runtime) http.Handler {
-	v1Router := v1.NewRouter()
+	v1Router := v1.NewRouter(v1.Options{
+		UpstreamURL:           cfg.UpstreamURL(),
+		DialTimeout:           cfg.Upstream.DialTimeout,
+		ResponseHeaderTimeout: cfg.Upstream.ResponseHeaderTimeout,
+		Logger:                logger,
+		Telemetry:             obs,
+	})
 	opts := passthrough.Options{
 		DialTimeout:           cfg.Upstream.DialTimeout,
 		ResponseHeaderTimeout: cfg.Upstream.ResponseHeaderTimeout,
