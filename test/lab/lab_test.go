@@ -62,6 +62,56 @@ func waitFor(t *testing.T, description string, check func() bool) {
 	t.Fatalf("timed out waiting for %s", description)
 }
 
+func setProbe(t *testing.T, value string) {
+	t.Helper()
+	status, raw := request(t, http.MethodPost, "http://127.0.0.1:19280/probe", []byte(value))
+	if status != http.StatusNoContent {
+		t.Fatalf("set probe %s: %d %s", value, status, raw)
+	}
+}
+
+func clearNotifications(t *testing.T) {
+	t.Helper()
+	status, raw := request(t, http.MethodDelete, "http://127.0.0.1:19280/notifications", nil)
+	if status != http.StatusNoContent {
+		t.Fatalf("clear notifications: %d %s", status, raw)
+	}
+}
+
+func hasAlert(t *testing.T, proxy, name string) bool {
+	t.Helper()
+	query := url.Values{"filter": {fmt.Sprintf(`alertname=%q`, name)}}.Encode()
+	var alerts []struct{ Labels map[string]string }
+	readJSON(t, proxy+"/api/v2/alerts?"+query, &alerts)
+	for _, alert := range alerts {
+		if alert.Labels["alertname"] == name && alert.Labels["source"] == "amp-lab-legacy-prometheus" {
+			return true
+		}
+	}
+	return false
+}
+
+func waitLabNotification(t *testing.T, name, status string) {
+	t.Helper()
+	waitFor(t, status+" notification for "+name, func() bool {
+		var notifications []struct {
+			Alerts []struct {
+				Status string
+				Labels map[string]string
+			}
+		}
+		readJSON(t, "http://127.0.0.1:19280/notifications", &notifications)
+		for _, notification := range notifications {
+			for _, alert := range notification.Alerts {
+				if alert.Labels["alertname"] == name && alert.Labels["source"] == "amp-lab-legacy-prometheus" && alert.Status == status {
+					return true
+				}
+			}
+		}
+		return false
+	})
+}
+
 func TestThreeMemberCluster(t *testing.T) {
 	names := map[string]bool{}
 	for i, proxy := range proxies {
@@ -146,9 +196,35 @@ func TestRepresentativeV1Client(t *testing.T) {
 		return false
 	})
 	for _, proxy := range proxies {
-		status, _ := request(t, http.MethodGet, proxy+"/api/v1/status", nil)
-		t.Logf("%s v1 status response: %d (501 is expected until translation lands)", proxy, status)
+		waitFor(t, "real Prometheus v1 alert delivery through "+proxy, func() bool {
+			return hasAlert(t, proxy, "LegacyClientProbe")
+		})
 	}
+	for _, proxy := range proxies {
+		status, _ := request(t, http.MethodGet, proxy+"/api/v1/status", nil)
+		t.Logf("%s v1 status response: %d (GET status stays 501 until 070)", proxy, status)
+	}
+}
+
+func TestV1FiringAndResolvedThroughProxy(t *testing.T) {
+	setProbe(t, "0")
+	for _, proxy := range proxies {
+		waitFor(t, "Prometheus observes the resolved probe on "+proxy, func() bool {
+			return !hasAlert(t, proxy, "LegacyResolveProbe")
+		})
+	}
+	clearNotifications(t)
+
+	setProbe(t, "1")
+	for _, proxy := range proxies {
+		waitFor(t, "v1 firing probe delivery through "+proxy, func() bool {
+			return hasAlert(t, proxy, "LegacyResolveProbe")
+		})
+	}
+	waitLabNotification(t, "LegacyResolveProbe", "firing")
+
+	setProbe(t, "0")
+	waitLabNotification(t, "LegacyResolveProbe", "resolved")
 }
 
 func TestV2FiringAndResolvedNotifications(t *testing.T) {

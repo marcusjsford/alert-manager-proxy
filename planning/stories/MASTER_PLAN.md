@@ -34,7 +34,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [025](025-client-inventory-and-upgrade-target/) | Client inventory + Docker baseline | 015 | **Done** | Confirmed 0.26→0.34.1/three-instance Kubernetes contract; Docker lab and real v1-capable sender verified; production gaps tracked |
 | [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 015 | **Done** | Opt-in OTLP traces/metrics/logs; bounded identities and labels, redaction/correlation, real ClickHouse and outage verification |
 | [035](035-shared-v1-http-contract/) | Shared v1 HTTP contract | 020, 030 | **Done** | Envelopes, routing, CORS/preflight, cache headers, unknown paths/methods, and shared upstream error handling |
-| [040](040-post-alerts/) | `POST /api/v1/alerts` | 025, 035 | Not started | First delivery milestone: real legacy Prometheus sends firing/resolved alerts to a test receiver |
+| [040](040-post-alerts/) | `POST /api/v1/alerts` | 025, 035 | **Done** | First delivery milestone: real legacy Prometheus sends firing/resolved alerts to a test receiver |
 | [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` | 040 | Not started | Query-param and `filter=` translation, response reshaping (`/alerts/groups` turned out not to exist in v0.26.0 v1) |
 | [060](060-silences/) | Silences | 040 | Not started | List/get/create/update/delete, matcher translation |
 | [070](070-status-and-receivers/) | `status` + `receivers` | 040 | Not started | Reshape v2 status into the v1 layout legacy clients parse |
@@ -79,6 +79,15 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 040 — `POST /api/v1/alerts`
+
+Implemented v1 alert ingestion with 0.26's exact decode/validation errors, v2 field translation and
+the shared auth/timeout/telemetry path. The five recorded POST cases pass; a real 0.34.1 shows the
+posted fields via v2, and the pinned Prometheus 2.55.1 now delivers firing and resolved v1 alerts
+through every proxy to the lab receiver. Spans carry v1 route/count/identity and bounded alertnames,
+the received-alert metric increments, and failed or timed-out writes return v1 errors rather than
+success. Other v1 endpoints remain their expected XFAILs.
 
 ### 035 — Shared v1 HTTP contract
 

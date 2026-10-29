@@ -96,7 +96,7 @@ func (r *Router) Obs() *telemetry.Runtime {
 func (r *Router) defaultRoutes() []route {
 	return []route{
 		{exact(alertsPath), map[string]http.HandlerFunc{
-			http.MethodGet: nil, http.MethodPost: nil,
+			http.MethodGet: nil, http.MethodPost: r.postAlerts,
 		}},
 		{exact(silencesPath), map[string]http.HandlerFunc{
 			http.MethodGet: nil, http.MethodPost: nil,

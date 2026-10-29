@@ -1,6 +1,6 @@
 # 040 — `POST /api/v1/alerts`
 
-**Depends on:** 025, 035 · **Status:** Not started
+**Depends on:** 025, 035 · **Status:** Done
 
 ## Goal
 

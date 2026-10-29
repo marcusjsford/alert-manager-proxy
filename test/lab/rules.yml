@@ -7,3 +7,9 @@ groups:
           source: amp-lab-legacy-prometheus
         annotations:
           summary: Synthetic v1 delivery probe from the Docker development lab
+      - alert: LegacyResolveProbe
+        expr: amp_lab_probe == 1
+        labels:
+          source: amp-lab-legacy-prometheus
+        annotations:
+          summary: Synthetic firing/resolved v1 delivery probe from the Docker development lab

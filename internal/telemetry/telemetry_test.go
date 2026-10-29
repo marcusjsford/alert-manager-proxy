@@ -621,7 +621,7 @@ func TestV1PlaceholderIsObservedWithoutUpstreamCall(t *testing.T) {
 	cfg.Clients.Rules = []config.ClientRule{{Name: "legacy-prometheus", UserAgent: `^Prometheus/`}}
 	var output lockedBuffer
 	obs := observer(t, cfg, &output)
-	req := httptest.NewRequest("POST", "/api/v1/alerts", strings.NewReader(`[]`))
+	req := httptest.NewRequest("GET", "/api/v1/alerts", nil)
 	req.Header.Set("User-Agent", "Prometheus/2.55.1")
 	recorder := httptest.NewRecorder()
 	server.Handler(cfg, obs.Logger, obs).ServeHTTP(recorder, req)

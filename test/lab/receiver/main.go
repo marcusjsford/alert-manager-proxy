@@ -3,16 +3,21 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 func main() {
 	var mu sync.Mutex
 	notifications := make([]json.RawMessage, 0)
+	var probe atomic.Bool
+	probe.Store(true)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /-/ready", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("OK\n"))
@@ -37,6 +42,37 @@ func main() {
 		mu.Unlock()
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(copied)
+	})
+	mux.HandleFunc("DELETE /notifications", func(w http.ResponseWriter, _ *http.Request) {
+		mu.Lock()
+		notifications = notifications[:0]
+		mu.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, _ *http.Request) {
+		value := 0
+		if probe.Load() {
+			value = 1
+		}
+		w.Header().Set("Content-Type", "text/plain; version=0.0.4")
+		_, _ = fmt.Fprintf(w, "# TYPE amp_lab_probe gauge\namp_lab_probe %d\n", value)
+	})
+	mux.HandleFunc("POST /probe", func(w http.ResponseWriter, r *http.Request) {
+		raw, err := io.ReadAll(io.LimitReader(r.Body, 16))
+		if err != nil {
+			http.Error(w, "invalid probe value", http.StatusBadRequest)
+			return
+		}
+		switch strings.TrimSpace(string(raw)) {
+		case "0":
+			probe.Store(false)
+		case "1":
+			probe.Store(true)
+		default:
+			http.Error(w, "probe must be 0 or 1", http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
 	})
 	srv := &http.Server{
 		Addr: ":8080", Handler: mux,

@@ -24,7 +24,7 @@ notification config.
 | Notification receiver | http://127.0.0.1:19280/notifications |
 
 All published ports bind to loopback. The 0.26 reference does not join the three-member cluster.
-The receiver retains the latest 100 synthetic webhook notifications; it is a test utility.
+The receiver retains the latest 100 synthetic webhook notifications and exposes `DELETE /notifications` to clear them; it is a test utility.
 
 ## Representative legacy traffic
 
@@ -34,11 +34,12 @@ fires every evaluation cycle; the evaluation and resend intervals are both 5s. I
 three proxy endpoints plus the independent 0.26 reference, which provides the working v1 baseline.
 That fourth reference destination is test-only; target-cluster fanout is three.
 
-At story 025, proxy v1 operations still return **501**. Prometheus notification errors to the three
-proxies are therefore expected. Story 040 implements alert delivery; 050–070 implement the other
-v1 operations. The smoke tests prove reference delivery and exercise v2 firing/resolved webhooks
-and silence gossip across the real three-member target cluster. They do not claim working v1
-translation, production client compatibility or mixed-version migration compatibility.
+Story 040 translates `POST /api/v1/alerts`, so this real Prometheus now delivers alerts through
+all three proxies as well as to the 0.26 reference; `GET /api/v1/status` and the other v1 read and
+silence operations still return **501** until 050–070. `LegacyResolveProbe` is driven by a
+test-only gauge served by the receiver (`POST /probe` with `0` or `1`); the smoke test toggles it
+to observe a real v1 firing notification followed by a resolved one. The lab does not claim
+production client compatibility or mixed-version migration compatibility.
 
 Useful inspection commands:
 

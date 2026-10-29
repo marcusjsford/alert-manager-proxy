@@ -74,7 +74,6 @@ func TestPreflightBarePrefixRedirectsLikeV026(t *testing.T) {
 func TestKnownRoutesRemainExplicit501(t *testing.T) {
 	router := testRouter(t)
 	cases := []struct{ method, path string }{
-		{http.MethodPost, "/api/v1/alerts"},
 		{http.MethodGet, "/api/v1/alerts"},
 		{http.MethodPost, "/api/v1/silences"},
 		{http.MethodGet, "/api/v1/silences"},
