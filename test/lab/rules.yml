@@ -1,0 +1,9 @@
+groups:
+  - name: legacy-client-probe
+    rules:
+      - alert: LegacyClientProbe
+        expr: vector(1)
+        labels:
+          source: amp-lab-legacy-prometheus
+        annotations:
+          summary: Synthetic v1 delivery probe from the Docker development lab

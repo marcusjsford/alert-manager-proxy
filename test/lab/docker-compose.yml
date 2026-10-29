@@ -1,0 +1,104 @@
+# Isolated development lab. Production remains Kubernetes; no production URLs.
+x-alertmanager: &alertmanager
+  image: prom/alertmanager:v0.34.1
+  volumes: ["./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"]
+  tmpfs: ["/alertmanager:uid=65534,gid=65534,mode=0700"]
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O-", "http://localhost:9093/-/ready"]
+    interval: 1s
+    timeout: 2s
+    retries: 60
+
+x-proxy: &proxy
+  build: ../..
+  image: alertmanager-proxy:lab
+
+services:
+  receiver:
+    build: ./receiver
+    image: alertmanager-proxy:lab-receiver
+    ports: ["127.0.0.1:19280:8080"]
+
+  am-1:
+    <<: *alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --cluster.peer=am-2:9094
+      - --cluster.peer=am-3:9094
+    ports: ["127.0.0.1:19291:9093"]
+
+  am-2:
+    <<: *alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --cluster.peer=am-1:9094
+      - --cluster.peer=am-3:9094
+    ports: ["127.0.0.1:19292:9093"]
+
+  am-3:
+    <<: *alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --cluster.peer=am-1:9094
+      - --cluster.peer=am-2:9094
+    ports: ["127.0.0.1:19293:9093"]
+
+  proxy-1:
+    <<: *proxy
+    environment:
+      AMP_UPSTREAM_URL: http://am-1:9093
+    ports: ["127.0.0.1:19391:9095", "127.0.0.1:19491:9096"]
+    depends_on:
+      am-1: {condition: service_healthy}
+
+  proxy-2:
+    <<: *proxy
+    environment:
+      AMP_UPSTREAM_URL: http://am-2:9093
+    ports: ["127.0.0.1:19392:9095", "127.0.0.1:19492:9096"]
+    depends_on:
+      am-2: {condition: service_healthy}
+
+  proxy-3:
+    <<: *proxy
+    environment:
+      AMP_UPSTREAM_URL: http://am-3:9093
+    ports: ["127.0.0.1:19393:9095", "127.0.0.1:19493:9096"]
+    depends_on:
+      am-3: {condition: service_healthy}
+
+  am-v026:
+    <<: *alertmanager
+    image: prom/alertmanager:v0.26.0
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --cluster.listen-address=
+    ports: ["127.0.0.1:19226:9093"]
+
+  prometheus:
+    # Representative v1-capable binary, NOT a discovered estate client version.
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=1h
+      - --rules.alert.resend-delay=5s
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./rules.yml:/etc/prometheus/rules.yml:ro
+    tmpfs: ["/prometheus:uid=65534,gid=65534,mode=0700"]
+    ports: ["127.0.0.1:19290:9090"]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:9090/-/ready"]
+      interval: 1s
+      timeout: 2s
+      retries: 60
+    depends_on:
+      am-v026: {condition: service_healthy}
+      proxy-1: {condition: service_started}
+      proxy-2: {condition: service_started}
+      proxy-3: {condition: service_started}

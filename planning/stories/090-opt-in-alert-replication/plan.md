@@ -16,8 +16,8 @@ still get HA, without touching the clients.
 - Replicate after the local upstream responds; local result determines the client's response.
   Peer writes are async with bounded queue, timeout, and drop-on-full (counted), so a slow peer can't
   back-pressure clients.
-- Measure: for a client already sending to all four, `all` mode means each alert is written 4× per
-  node (16 writes vs 4). Quantify Alertmanager CPU/latency impact and decide whether `all` is
+- Measure: for a client already sending to all three, `all` mode means each alert is written 3× per
+  instance (9 writes vs 3). Quantify Alertmanager CPU/latency impact and decide whether `all` is
   ever recommended.
 - Telemetry: child spans per peer write, `am_proxy_replication_total{peer, result}`,
   queue depth gauge.

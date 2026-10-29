@@ -1,0 +1,13 @@
+global:
+  resolve_timeout: 1m
+route:
+  receiver: lab
+  group_by: [alertname, lab_run]
+  group_wait: 1s
+  group_interval: 2s
+  repeat_interval: 1h
+receivers:
+  - name: lab
+    webhook_configs:
+      - url: http://receiver:8080/alerts
+        send_resolved: true

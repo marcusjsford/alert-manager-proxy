@@ -1,7 +1,7 @@
 # alertmanager-proxy — Master Plan
 
 Tracks the story breakdown of the Alertmanager proxy — permanent infrastructure in front of each of
-the four Alertmanagers ([ADR decision 6](../ADR.md#decision-6--the-proxy-is-permanent-the-v1-layer-is-what-retires)).
+the three Alertmanagers ([ADR decision 6](../ADR.md#decision-6--the-proxy-is-permanent-the-v1-layer-is-what-retires)).
 Two goals: unblock upgrading past 0.26 (v1 removed in 0.27.0) by translating v1→v2 for legacy
 clients that can't change, and make the whole alert path observable — per client, protocol, endpoint
 and parameter, for v1 and v2 — for as long as it runs. Only the v1 layer retires.
@@ -31,7 +31,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | **Done** | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
 | [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | **Done** | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
 | [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010, 020 | **Done** | Five-job Forgejo CI green; real mutation fails integration; local/remote check parity verified |
-| [025](025-client-inventory-and-upgrade-target/) | Client inventory + upgrade target | 015 | Not started | Identify real legacy clients and their requests, pin the upgrade target, and confirm deployment/auth/topology |
+| [025](025-client-inventory-and-upgrade-target/) | Client inventory + Docker baseline | 015 | **Done** | Confirmed 0.26→0.34.1/three-instance Kubernetes contract; Docker lab and real v1-capable sender verified; production gaps tracked |
 | [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 015 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
 | [035](035-shared-v1-http-contract/) | Shared v1 HTTP contract | 020, 030 | Not started | Envelopes, routing, CORS/preflight, cache headers, unknown paths/methods, and shared upstream error handling |
 | [040](040-post-alerts/) | `POST /api/v1/alerts` | 025, 035 | Not started | First delivery milestone: real legacy Prometheus sends firing/resolved alerts to a test receiver |
@@ -39,9 +39,9 @@ Finish an in-progress story before selecting the next eligible row.
 | [060](060-silences/) | Silences | 040 | Not started | List/get/create/update/delete, matcher translation |
 | [070](070-status-and-receivers/) | `status` + `receivers` | 040 | Not started | Reshape v2 status into the v1 layout legacy clients parse |
 | [072](072-target-version-compatibility-gate/) | MVP target-version compatibility gate | 015, 025, 050, 060, 070 | Not started | Strict contract and pass-through gate against 0.26 and the chosen target; real-client and failure-path verification |
-| [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072 | Not started | Deploy 1:1, health/limits/restart/self-alerting, four-node rehearsal, rollback, and human-approved upgrade |
+| [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover |
 | [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030, 074 | Not started | Post-MVP: same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
-| [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | Not started | Report clients that post alerts to fewer than all four Alertmanagers |
+| [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | Not started | Report clients that post alerts to fewer than all three Alertmanagers |
 | [100](100-alert-path-dashboards/) | Alert-path dashboards | 075, 080 | Not started | Permanent per-client view of the alert path (v1 and v2) + partial fanout; includes the v1-retirement view |
 | [105](105-upstream-release-compatibility/) | Continuous upstream release compatibility | 072, 075 | Not started | Extend the MVP gate to production/latest and automatically test newly discovered releases |
 | [110](110-packaging-and-cutover/) | Permanent operations + v1 retirement | 074, 100, 105 | Not started | Extend MVP operations with dashboard-backed procedures and the tested `v1.enabled` switch-off/rollback |
@@ -50,17 +50,21 @@ Finish an in-progress story before selecting the next eligible row.
 
 ## Compatibility MVP — release boundary at 074
 
-- **040 is the alert-sender milestone:** the actual oldest legacy Prometheus delivers firing and
-  resolved notifications through v1 → proxy → v2. It does not establish read/silence/UI compatibility.
+- **040 is the development alert-sender milestone:** the pinned representative Prometheus delivers
+  firing/resolved notifications through v1 → proxy → v2. Actual estate client compatibility remains
+  a mandatory 072/074 production gate, as does read/silence/UI compatibility.
 - **074 is the full compatibility MVP:** 025, 030, 035, 040–070, 072 and 074 are complete, all 48
   current contract exchanges plus estate-specific additions pass with no pending exemptions, and
   the chosen upgrade is rehearsed and deployed with human approval. Unknown clients are an explicit
-  evidence gap, not assumed compatible. Preserve the existing four-node fanout topology.
+  evidence gap, not assumed compatible. Preserve client delivery across the three-instance topology.
 - Basic telemetry and operational error/latency visibility are required. Deep v2 inspection,
   automated fanout detection, full dashboards, scheduled release discovery, v1 retirement, replication
   and Rust are post-MVP; they do not gate 074.
 - 072 gates the selected upgrade version now; 105 extends that gate to future releases. 074 owns
   initial packaging and cutover; 110 owns later permanent-operation refinements and v1 retirement.
+- Operator confirmed current 0.26.0, target 0.34.1 and three instances on Kubernetes in 025.
+  [Client inventory](../client-inventory.md) records remaining client/deployment evidence and the
+  distinction between deprecating old direct endpoints and disabling the proxy's v1 translation.
 
 Ending v1 translation is an operational step (flip `v1.enabled` once story 100's v1 view shows no
 traffic for the agreed period, procedure in 110), not a story — the proxy itself is not retired.
@@ -75,6 +79,16 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 025 — Confirmed upgrade contract + Docker development baseline
+
+Operator confirmed current 0.26.0, target 0.34.1 and three instances on Kubernetes, correcting the
+four-instance assumption; development should use Docker and actual client versions are not yet
+known. Added a persistent isolated lab with three target members/proxies, an independent 0.26
+reference, real Prometheus 2.55.1 configured for v1 and a bounded webhook receiver. Fresh-start
+race-enabled checks prove membership, reference v1 delivery, v2 firing/resolved notifications and
+silence gossip; full local CI passes. Production client/auth/manifests/cutover evidence remains a
+mandatory 072/074 gate; v1 translation remains unimplemented and is reported as 501/XFAIL.
 
 ### 015 — Forgejo Actions CI + MVP-first roadmap
 

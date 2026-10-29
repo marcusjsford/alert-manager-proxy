@@ -11,8 +11,14 @@ re-litigated by the next person with the same idea.
 
 Alertmanager removed API v1 in **0.27.0** (deprecated since the v2 API landed). A set of legacy
 clients — old Prometheus servers, scripts, dashboards — speak only v1 and cannot be changed, which
-pins the four-node Alertmanager cluster to ≤0.26. The goal is to unblock upgrading Alertmanager by
+pins the three-instance Alertmanager cluster to 0.26.0. The goal is to unblock upgrading Alertmanager by
 putting a translation layer in front of it.
+
+**Operator confirmation (2026-10-29, story 025):** all current Alertmanagers run 0.26.0; the chosen
+target is 0.34.1 on Kubernetes with three instances, correcting the original four-node assumption.
+Clients move through the proxy to the three-instance v2 set before existing direct v1 endpoints
+are deprecated. Exact Kubernetes resources, client versions, auth/path requirements and parallel-
+set versus rolling cutover mechanics remain unverified; see [client inventory](client-inventory.md).
 
 The same position in the request path gives something Alertmanager doesn't offer itself: per-client,
 per-call visibility of everything that writes alerts and silences. That is valuable independently of
@@ -49,8 +55,9 @@ small shim.
 
 ## Decision 2 — Topology: one proxy per Alertmanager, stateless
 
-**Chosen:** a proxy instance in front of each of the four Alertmanagers (same host / pod, 1:1).
-Clients that today list four Alertmanager URLs list four proxy URLs instead. Each proxy translates
+**Chosen:** a proxy instance in front of each of the three Alertmanagers (Kubernetes, same pod or
+equivalent per-instance placement, 1:1). Clients that fan out to all three Alertmanagers target all
+three proxies instead; actual client destinations and service discovery must be inventoried. Each proxy translates
 v1 and transparently passes through everything else (`/api/v2/*`, UI, `/-/healthy`, `/metrics` of
 its own on a separate port) to *its* Alertmanager.
 
@@ -58,7 +65,7 @@ its own on a separate port) to *its* Alertmanager.
 to every Alertmanager; a 1:1 proxy changes nothing about that, adds no shared state, and losing one
 proxy is the same failure as losing its Alertmanager.
 
-**Rejected — a single shared proxy fanning out to all four:** introduces a new single point of
+**Rejected — a single shared proxy fanning out to all three:** introduces a new single point of
 failure and changes write semantics for every client, including the well-configured majority, to fix
 a minority problem that decision 5 handles more narrowly.
 
@@ -90,7 +97,7 @@ used by `code-indexer`, `nuc01`), with:
 - **Lossy translation is observable**: a span event plus a counter whenever a field is dropped,
   defaulted, or approximated.
 
-## Decision 5 — Clients that don't send to all four Alertmanagers: detect first, replicate opt-in
+## Decision 5 — Clients that don't send to all three Alertmanagers: detect first, replicate opt-in
 
 Alertmanager clustering gossips **silences and the notification log, not alerts** — so a client
 that posts to only one Alertmanager loses its alerts if that node is down. Today nothing notices.
@@ -101,11 +108,11 @@ that posts to only one Alertmanager loses its alerts if that node is down. Today
    rule). No behaviour change.
 2. **Replicate, opt-in (story 090):** a proxy can be configured to forward received alert posts to
    the *other* Alertmanagers directly (never to other proxies — no loops). Re-posting an alert
-   Alertmanager already holds is merged by fingerprint, so a client that already sends to all four
+   Alertmanager already holds is merged by fingerprint, so a client that already sends to all three
    gets redundant but harmless writes; the story must measure that cost and decide whether to
    replicate only for clients detected as partial.
 
-**Rejected — fix it silently by always fanning out:** changes write volume ×4 for everyone and hides
+**Rejected — fix it silently by always fanning out:** changes write volume ×3 for everyone and hides
 the misconfiguration instead of surfacing it.
 
 ## Decision 6 — The proxy is permanent; the v1 layer is what retires

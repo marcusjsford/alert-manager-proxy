@@ -15,6 +15,8 @@ Alertmanager that is **permanent infrastructure**, not a migration shim. It does
   prompt for an agent with no memory of how any of this got here.
 - [`ADR.md`](ADR.md) — the decisions every story inherits (language, topology, contract source of
   truth, telemetry model, partial-fanout handling), with the rejected alternatives.
+- [`client-inventory.md`](client-inventory.md) — operator-confirmed versions/topology and outstanding
+  real-client/deployment evidence (story 025); target 0.34.1, three Alertmanagers on Kubernetes.
 
 | Initiative | Index | What it covers |
 |---|---|---|
