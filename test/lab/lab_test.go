@@ -201,8 +201,30 @@ func TestRepresentativeV1Client(t *testing.T) {
 		})
 	}
 	for _, proxy := range proxies {
-		status, _ := request(t, http.MethodGet, proxy+"/api/v1/status", nil)
-		t.Logf("%s v1 status response: %d (GET status stays 501 until 070)", proxy, status)
+		var status struct {
+			Status string
+			Data   struct {
+				ConfigYAML  string            `json:"configYAML"`
+				VersionInfo map[string]string `json:"versionInfo"`
+			} `json:"data"`
+		}
+		readJSON(t, proxy+"/api/v1/status", &status)
+		if status.Status != "success" || status.Data.ConfigYAML == "" ||
+			status.Data.VersionInfo["version"] != "0.34.1" {
+			t.Fatalf("%s v1 status did not expose the target version/config: %+v", proxy, status)
+		}
+		var receivers struct {
+			Status string
+			Data   []string `json:"data"`
+		}
+		readJSON(t, proxy+"/api/v1/receivers", &receivers)
+		found := false
+		for _, receiver := range receivers.Data {
+			found = found || receiver == "lab"
+		}
+		if receivers.Status != "success" || !found {
+			t.Fatalf("%s v1 receivers did not contain lab: %+v", proxy, receivers)
+		}
 	}
 }
 

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"alertmanager-proxy/internal/v1/envelope"
@@ -68,31 +67,6 @@ func TestPreflightBarePrefixRedirectsLikeV026(t *testing.T) {
 	}
 	if got := rec.Header().Get("Location"); got != "/api/v1/" {
 		t.Errorf("Location = %q", got)
-	}
-}
-
-func TestKnownRoutesRemainExplicit501(t *testing.T) {
-	router := testRouter(t)
-	cases := []struct{ method, path string }{
-		{http.MethodGet, "/api/v1/status"},
-		{http.MethodGet, "/api/v1/receivers"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.method+" "+tc.path, func(t *testing.T) {
-			rec := serve(t, router, tc.method, tc.path)
-			if rec.Code != http.StatusNotImplemented {
-				t.Fatalf("status = %d", rec.Code)
-			}
-			assertEnvelopeHeaders(t, rec)
-			if got := rec.Header().Get("Content-Type"); got != "application/json" {
-				t.Errorf("Content-Type = %q", got)
-			}
-			body := rec.Body.String()
-			if !strings.Contains(body, `"status":"error"`) ||
-				!strings.Contains(body, `"errorType":"not_implemented"`) {
-				t.Errorf("body = %q", body)
-			}
-		})
 	}
 }
 

@@ -37,7 +37,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [040](040-post-alerts/) | `POST /api/v1/alerts` | 025, 035 | **Done** | First delivery milestone: real legacy Prometheus sends firing/resolved alerts to a test receiver |
 | [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` | 040 | **Done** | Query-param and `filter=` translation, response reshaping (`/alerts/groups` turned out not to exist in v0.26.0 v1) |
 | [060](060-silences/) | Silences | 040 | **Done** | List/get/create/update/delete, matcher translation |
-| [070](070-status-and-receivers/) | `status` + `receivers` | 040 | Not started | Reshape v2 status into the v1 layout legacy clients parse |
+| [070](070-status-and-receivers/) | `status` + `receivers` | 040 | **Done** | Reshape v2 status into the v1 layout legacy clients parse |
 | [072](072-target-version-compatibility-gate/) | MVP target-version compatibility gate | 015, 025, 050, 060, 070 | Not started | Strict contract and pass-through gate against 0.26 and the chosen target; real-client and failure-path verification |
 | [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover |
 | [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030, 074 | Not started | Post-MVP: same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
@@ -79,6 +79,14 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 070 — `status` + `receivers`
+
+Reshaped v2 status into the v1 layout, including legacy YAML/JSON config rendering with target-only
+fields removed and secrets masked as `<secret>`. Chose to report the real upstream version rather
+than impersonating 0.26 and recorded that decision/risk for 072. Receivers become the v1 name list.
+All 48 contract exchanges now pass with no pending exemptions; config-package footprint and unknown
+estate status-client evidence are recorded.
 
 ### 060 — Silences
 
