@@ -621,7 +621,7 @@ func TestV1PlaceholderIsObservedWithoutUpstreamCall(t *testing.T) {
 	cfg.Clients.Rules = []config.ClientRule{{Name: "legacy-prometheus", UserAgent: `^Prometheus/`}}
 	var output lockedBuffer
 	obs := observer(t, cfg, &output)
-	req := httptest.NewRequest("GET", "/api/v1/silences", nil)
+	req := httptest.NewRequest("GET", "/api/v1/status", nil)
 	req.Header.Set("User-Agent", "Prometheus/2.55.1")
 	recorder := httptest.NewRecorder()
 	server.Handler(cfg, obs.Logger, obs).ServeHTTP(recorder, req)
@@ -641,7 +641,7 @@ func TestV1PlaceholderIsObservedWithoutUpstreamCall(t *testing.T) {
 			for _, span := range scope.Spans {
 				count++
 				attrs := values(span.Attributes)
-				if span.Kind != tracepb.Span_SPAN_KIND_SERVER || attrs["client.name"] != "legacy-prometheus" || attrs["am.api.version"] != "v1" || attrs["http.route"] != "/api/v1/silences" {
+				if span.Kind != tracepb.Span_SPAN_KIND_SERVER || attrs["client.name"] != "legacy-prometheus" || attrs["am.api.version"] != "v1" || attrs["http.route"] != "/api/v1/status" {
 					t.Fatalf("incorrect v1 request trace: %v", attrs)
 				}
 			}

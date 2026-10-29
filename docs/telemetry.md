@@ -118,7 +118,11 @@ bounded request content that would make logs noisy. `Runtime.Lossy(ctx, field, r
 `am.translation.lossy` and increments the lossy counter; field/reason are span-only.
 `Runtime.Alerts(ctx, count)` adds `am.alerts.count` and increments the received-alert counter.
 `POST /api/v1/alerts` also attaches the deduplicated, bounded `am.alerts.names` list to the span
-only and records a `alert.timestamps` lossy event when sub-millisecond precision is truncated. Field/reason names should describe the implementation's
+only and records a `alert.timestamps` lossy event when sub-millisecond precision is truncated.
+Silence operations attach `am.silence.operation`, `am.silence.id` and canonical matchers; create and
+update also attach `am.silence.createdBy`/`am.silence.comment`, which the redaction configuration
+removes when enabled. List/get record the `silence.timestamps` lossy event for v2's millisecond
+precision. Field/reason names should describe the implementation's
 translation decision, not embed arbitrary request content.
 
 030 does not inspect v2 JSON payloads or implement v1 translation. 040–070 and 075 call these helpers

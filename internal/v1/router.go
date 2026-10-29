@@ -99,10 +99,10 @@ func (r *Router) defaultRoutes() []route {
 			http.MethodGet: r.getAlerts, http.MethodPost: r.postAlerts,
 		}},
 		{exact(silencesPath), map[string]http.HandlerFunc{
-			http.MethodGet: nil, http.MethodPost: nil,
+			http.MethodGet: r.getSilences, http.MethodPost: r.postSilences,
 		}},
 		{silenceID, map[string]http.HandlerFunc{
-			http.MethodGet: nil, http.MethodDelete: nil,
+			http.MethodGet: r.getSilence, http.MethodDelete: r.deleteSilence,
 		}},
 		{exact(statusPath), map[string]http.HandlerFunc{
 			http.MethodGet: nil,

@@ -112,7 +112,7 @@ func TestV1RoutesAreOwnedByTheProxy(t *testing.T) {
 	defer upstream.Close()
 	proxy := newProxy(t, upstream.URL, nil)
 
-	for _, path := range []string{"/api/v1/silences", "/api/v1/silence/abc"} {
+	for _, path := range []string{"/api/v1/status", "/api/v1/receivers"} {
 		resp, err := http.Get(proxy.URL + path)
 		if err != nil {
 			t.Fatal(err)

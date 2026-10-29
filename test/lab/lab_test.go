@@ -293,3 +293,68 @@ func TestSilenceGossip(t *testing.T) {
 		})
 	}
 }
+
+func TestV1SilenceGossipAndMuting(t *testing.T) {
+	run := fmt.Sprintf("v1-silence-%d", time.Now().UnixNano())
+	now := time.Now().UTC()
+	body := fmt.Sprintf(`{"matchers":[{"name":"lab_run","value":%q,"isRegex":false,"isEqual":true}],"startsAt":%q,"endsAt":%q,"createdBy":"amp-lab-v1","comment":"v1 silence gossip probe"}`,
+		run, now.Format(time.RFC3339Nano), now.Add(5*time.Minute).Format(time.RFC3339Nano))
+	status, raw := request(t, http.MethodPost, proxies[0]+"/api/v1/silences", []byte(body))
+	if status != http.StatusOK {
+		t.Fatalf("v1 create silence: %d %s", status, raw)
+	}
+	var created struct {
+		Status string
+		Data   struct {
+			SilenceID string `json:"silenceId"`
+		}
+	}
+	if err := json.Unmarshal(raw, &created); err != nil || created.Status != "success" || created.Data.SilenceID == "" {
+		t.Fatalf("invalid v1 create response: %s", raw)
+	}
+	for _, proxy := range proxies {
+		waitFor(t, "v1 silence gossip to "+proxy, func() bool {
+			status, body := request(t, http.MethodGet, proxy+"/api/v2/silence/"+created.Data.SilenceID, nil)
+			return status == http.StatusOK && strings.Contains(string(body), created.Data.SilenceID)
+		})
+	}
+
+	clearNotifications(t)
+	alert := fmt.Sprintf(`[{"labels":{"alertname":"V1SilenceProbe","lab_run":%q},"annotations":{"summary":"must stay muted"},"startsAt":%q,"endsAt":%q}]`,
+		run, now.Add(-time.Minute).Format(time.RFC3339Nano), now.Add(3*time.Minute).Format(time.RFC3339Nano))
+	for _, proxy := range proxies {
+		if status, raw := request(t, http.MethodPost, proxy+"/api/v2/alerts", []byte(alert)); status != http.StatusOK {
+			t.Fatalf("post suppressed alert to %s: %d %s", proxy, status, raw)
+		}
+	}
+	query := url.Values{"filter": {fmt.Sprintf(`lab_run=%q`, run)}}.Encode()
+	for _, proxy := range proxies {
+		waitFor(t, "silenced alert state on "+proxy, func() bool {
+			var alerts []struct {
+				Labels map[string]string
+				Status struct{ State string }
+			}
+			readJSON(t, proxy+"/api/v2/alerts?"+query, &alerts)
+			return len(alerts) == 1 && alerts[0].Labels["lab_run"] == run && alerts[0].Status.State == "suppressed"
+		})
+	}
+
+	// group_wait is 1s and group_interval 2s; give the notification pipeline
+	// time to prove that a silenced new alert is not delivered.
+	time.Sleep(6 * time.Second)
+	var notifications []struct {
+		Alerts []struct{ Labels map[string]string }
+	}
+	readJSON(t, "http://127.0.0.1:19280/notifications", &notifications)
+	for _, notification := range notifications {
+		for _, alert := range notification.Alerts {
+			if alert.Labels["lab_run"] == run {
+				t.Fatalf("silenced alert was delivered to the receiver: %+v", alert.Labels)
+			}
+		}
+	}
+
+	if status, raw := request(t, http.MethodDelete, proxies[0]+"/api/v1/silence/"+created.Data.SilenceID, nil); status != http.StatusOK {
+		t.Fatalf("v1 delete silence: %d %s", status, raw)
+	}
+}
