@@ -1,6 +1,9 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 IMAGE   ?= alertmanager-proxy
 LINT_IMAGE ?= golangci/golangci-lint:v2.14.0
+AM_VERSION ?= v0.34.1
+REFERENCE_VERSION ?= v0.26.0
+TARGET_VERSION ?= v0.34.1
 AM_PORT ?= 19093
 COMPOSE = docker compose -f test/integration/docker-compose.yml -p amp-integration
 CONTRACT_COMPOSE = docker compose -f test/contract/docker-compose.yml -p amp-contract
@@ -8,8 +11,11 @@ LAB_COMPOSE = docker compose -f test/lab/docker-compose.yml -p amp-lab
 TELEMETRY_COMPOSE = docker compose -f test/telemetry/docker-compose.yml -p amp-telemetry
 CONTRACT = go run ./test/contract/cmd/contract
 FIXTURES = test/contract/fixtures/v0.26.0
+PENDING ?= test/contract/pending.txt
+CONTRACT_FLAGS ?=
+V1_CLIENT_ARGS ?= --url http://127.0.0.1:19391 --url http://127.0.0.1:19392 --url http://127.0.0.1:19393 --receiver http://127.0.0.1:19280
 
-.PHONY: build test lint integration contract contract-record contract-determinism lab lab-check lab-down telemetry telemetry-check telemetry-down docker ci clean
+.PHONY: build test lint integration integration-v026 contract strict-contract release-check contract-record contract-determinism v1-client-check v1-client-syntax lab lab-check lab-down telemetry telemetry-check telemetry-down docker ci clean
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/alertmanager-proxy ./cmd/alertmanager-proxy
@@ -21,19 +27,38 @@ test:
 lint:
 	docker run --rm -v "$(CURDIR)":/src -v "$$(go env GOMODCACHE)":/go/pkg/mod -w /src $(LINT_IMAGE) golangci-lint run ./...
 
-# Pass-through against a real Alertmanager (version pinned in the compose file).
+# Pass-through against a real Alertmanager (version pinned by AM_VERSION).
 integration:
-	AM_PORT=$(AM_PORT) $(COMPOSE) up -d --wait
-	AMP_IT_UPSTREAM_URL=http://127.0.0.1:$(AM_PORT) go test -tags integration -count=1 -v ./test/integration/; \
+	AM_VERSION=$(AM_VERSION) AM_PORT=$(AM_PORT) $(COMPOSE) up -d --wait
+	AM_VERSION=$(AM_VERSION) AMP_IT_UPSTREAM_URL=http://127.0.0.1:$(AM_PORT) go test -tags integration -count=1 -v ./test/integration/; \
 		status=$$?; $(COMPOSE) down -v; exit $$status
+
+integration-v026:
+	$(MAKE) integration AM_VERSION=$(REFERENCE_VERSION)
 
 # v1 contract: replay the recorded v0.26.0 fixtures against proxy -> current
 # Alertmanager. Per-endpoint table; pending endpoints (test/contract/pending.txt)
-# are expected failures.
+# are expected failures. CONTRACT_FLAGS=-strict makes release mode require an
+# empty pending list.
 contract:
-	$(CONTRACT_COMPOSE) --profile verify up -d --build --force-recreate
-	$(CONTRACT) verify -target http://127.0.0.1:19195 -fixtures $(FIXTURES); \
+	AM_VERSION=$(AM_VERSION) $(CONTRACT_COMPOSE) --profile verify up -d --build --force-recreate
+	$(CONTRACT) verify $(CONTRACT_FLAGS) -target http://127.0.0.1:19195 -fixtures $(FIXTURES) -pending $(PENDING); \
 		status=$$?; $(CONTRACT_COMPOSE) --profile verify down -v; exit $$status
+
+# Release gate: both the initial deployment version and the selected upgrade
+# target must pass every fixture with no exemptions.
+strict-contract:
+	$(MAKE) contract CONTRACT_FLAGS=-strict AM_VERSION=$(REFERENCE_VERSION)
+	$(MAKE) contract CONTRACT_FLAGS=-strict AM_VERSION=$(TARGET_VERSION)
+
+release-check: strict-contract
+
+# Legacy Python v1 client probe; requires the manual lab or explicit --url args.
+v1-client-check:
+	python3 test/clients/v1_client.py $(V1_CLIENT_ARGS)
+
+v1-client-syntax:
+	python3 -m py_compile test/clients/v1_client.py
 
 # Re-record the fixtures from a fresh Alertmanager v0.26.0.
 contract-record:
@@ -76,7 +101,8 @@ docker:
 
 # Everything the Forgejo pipeline runs, locally. The persistent manual lab is
 # separate; integration and contract create and remove their own environments.
-ci: build test lint integration contract docker
+# The strict contract runs both versions and is the release gate.
+ci: build test lint integration integration-v026 strict-contract docker
 
 clean:
 	rm -rf bin

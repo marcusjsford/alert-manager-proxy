@@ -18,6 +18,11 @@ failing. A story that implements an endpoint removes its line; a pending endpoin
 reports `XPASS` and fails the run, so the list can't go stale. `-v` prints diffs for pending
 endpoints too.
 
+**Strict release mode.** `contract verify -strict` refuses to run with a non-empty pending list and
+then requires every fixture to pass. `make strict-contract` (alias `make release-check`) runs that
+gate against both `v0.26.0` and `v0.34.1`; `make ci` and the Forgejo `contract`/`contract-v026` jobs
+do the same. Development `make contract` still uses `pending.txt`.
+
 **Normalisation** (`harness/normalise.go`): timestamps become minute-rounded offsets from the run's
 start (`<now+60m>`), silence UUIDs become `<uuid:N>` in scenario execution order (including
 uncompared v2 setup responses; set-valued `silencedBy`/`inhibitedBy` arrays are sorted before any

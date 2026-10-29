@@ -138,6 +138,15 @@ func LoadPending(path string) (map[string]bool, error) {
 	return pending, sc.Err()
 }
 
+// CheckStrictPending rejects any non-empty pending list. Strict release mode
+// must only run with every endpoint expected to pass.
+func CheckStrictPending(pending map[string]bool) error {
+	if len(pending) > 0 {
+		return fmt.Errorf("strict release mode requires an empty pending list; %d endpoint(s) remain", len(pending))
+	}
+	return nil
+}
+
 // Verdicts for an endpoint.
 const (
 	Pass  = "PASS"

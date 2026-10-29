@@ -105,6 +105,7 @@ func verify(args []string) (bool, error) {
 	c.register(fs)
 	fixtures := fs.String("fixtures", "test/contract/fixtures/v0.26.0", "recorded fixture directory")
 	pendingPath := fs.String("pending", "test/contract/pending.txt", "endpoints expected to fail (empty: none)")
+	strict := fs.Bool("strict", false, "release mode: fail if any endpoint is pending")
 	verbose := fs.Bool("v", false, "print diffs for pending endpoints too")
 	_ = fs.Parse(args)
 
@@ -118,6 +119,11 @@ func verify(args []string) (bool, error) {
 	pending, err := harness.LoadPending(*pendingPath)
 	if err != nil {
 		return false, err
+	}
+	if *strict {
+		if err := harness.CheckStrictPending(pending); err != nil {
+			return false, err
+		}
 	}
 	got, err := c.run(false)
 	if err != nil {
