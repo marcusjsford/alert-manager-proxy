@@ -251,6 +251,16 @@ func (r *Runtime) Parameters(ctx context.Context, attrs ...attribute.KeyValue) {
 	}
 }
 
+// SpanParameters adds redacted detail to the request span only, not to the
+// access log or metric labels. Use it for bounded request content such as
+// alertnames that would make logs noisy.
+func (r *Runtime) SpanParameters(ctx context.Context, attrs ...attribute.KeyValue) {
+	if !r.Enabled {
+		return
+	}
+	trace.SpanFromContext(ctx).SetAttributes(r.redactor.attributes(attrs)...)
+}
+
 // Lossy reports an explicit translation decision; field/reason are span-only.
 func (r *Runtime) Lossy(ctx context.Context, field, reason string) {
 	if !r.Enabled {
