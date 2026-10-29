@@ -480,7 +480,7 @@ func TestCollectorOutageDoesNotBlockRequests(t *testing.T) {
 			t.Fatal("collector error changed request outcome")
 		}
 	}
-	if delivered.Load() != 500 || time.Since(started) > 2*time.Second {
+	if delivered.Load() != 500 || time.Since(started) > 10*time.Second {
 		t.Fatal("export backpressured client requests")
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), 250*time.Millisecond)

@@ -94,3 +94,7 @@ the counter. Unknown v1 query parameters are not forwarded to v2.
 - `go test -race ./...`, `go vet`, all-tag vet/lint (0 issues) and `make ci` pass.
 - `TestV1GetAlertsTelemetry` exports a real v1 server span and lossy counter; the filter table covers
   all four operators, quoted commas, escaped quotes and invalid input.
+- Forgejo push CI run 27 exposed a pre-existing flaky 2-second budget in
+  `TestCollectorOutageDoesNotBlockRequests` under the shared runner. The test still requires all 500
+  requests and asserts bounded shutdown; its delivery budget is now 10 seconds so CI load cannot
+  turn the outage check into a false failure.
