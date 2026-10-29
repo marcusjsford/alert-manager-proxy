@@ -58,7 +58,7 @@ v1-client-check:
 	python3 test/clients/v1_client.py $(V1_CLIENT_ARGS)
 
 v1-client-syntax:
-	python3 -m py_compile test/clients/v1_client.py
+	python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("test/clients/v1_client.py").read_text())'
 
 # Re-record the fixtures from a fresh Alertmanager v0.26.0.
 contract-record:
