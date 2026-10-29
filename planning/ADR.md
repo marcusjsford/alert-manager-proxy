@@ -119,12 +119,13 @@ without redeploying topology or repointing clients.
 - **Pass-through must be a first-class path**, not a fallback: same telemetry depth (decision 4),
   same test rigour, and it must not rewrite v2 requests or responses.
 - **It must track Alertmanager releases.** A permanent proxy has to keep working as Alertmanager's
-  v2 API evolves; the contract harness runs against each new Alertmanager release (story 105), and
-  an upstream upgrade is gated on it.
+  v2 API evolves; 072 establishes the strict selected-target upgrade gate, and 105 extends it to
+  new upstream releases. Every upstream upgrade requires a green strict run for its exact target.
 - **It is part of the alert path's availability.** A proxy failure is an alert-delivery failure for
   its node. The 1:1 topology (decision 2) bounds the blast radius to one node — the same as losing
   that Alertmanager — but the proxy needs its own health checks, resource limits and alerting
-  (story 110), and must never be the reason a node is down when its Alertmanager is up.
+  (story 074 initially, extended by 110), and must never be the reason a node is down when its
+  Alertmanager is up.
 
 **Rejected — remove the proxy after cutover:** the telemetry it provides (who sends what, partial
 fanout) has no other source; Alertmanager's own metrics don't attribute requests to clients.

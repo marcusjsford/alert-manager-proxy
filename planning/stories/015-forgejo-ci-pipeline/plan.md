@@ -1,6 +1,6 @@
 # 015 — Forgejo Actions CI pipeline working
 
-**Depends on:** 010 · **Status:** Not started
+**Depends on:** 010, 020 · **Status:** Done
 
 ## Goal
 
@@ -19,6 +19,12 @@ see [010's findings](../010-skeleton-and-passthrough/findings.md#ci-not-working-
 - Fix the workflow or the runner config, whichever is actually wrong. Changes to code-indexer's
   runner configuration affect that project's CI too: name them explicitly before making them.
 - Keep `make ci` and `ci.yml` running the same checks.
+- Include 020's contract harness as a fifth job and gate docker-build on all four prerequisite
+  jobs. Preserve development XFAIL handling; the strict release gate belongs to 072.
+- Resume the existing clean story branch at `215882b` rather than overwrite it. Reconcile its
+  successful push run with stale planning status and complete the isolated mutation test.
+- Carry the user-requested MVP roadmap amendments in this branch (025/035/072/074 and dependent
+  plan updates), without implementing those future stories.
 
 ## Explicit non-goals
 

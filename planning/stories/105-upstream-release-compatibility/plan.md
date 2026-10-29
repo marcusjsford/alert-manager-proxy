@@ -1,6 +1,6 @@
 # 105 — Upstream release compatibility
 
-**Depends on:** 050, 060, 070 · **Status:** Not started
+**Depends on:** 072, 075 · **Status:** Not started
 
 ## Goal
 
@@ -9,12 +9,13 @@ Keep a permanent proxy correct as Alertmanager releases continue
 
 ## Scope
 
-- CI matrix: the contract harness (020) and pass-through tests (010, 075) against the Alertmanager
-  version in production and the latest upstream release.
+- Extend 072's strict exact-target gate: run the contract harness and pass-through/inspection tests
+  against the Alertmanager version in production and the latest upstream release, with no pending
+  exemptions. Keep the selected-upgrade gate available independently of scheduled discovery.
 - A scheduled job that detects a new upstream Alertmanager release and runs the matrix against it,
   reporting any diff.
-- Policy, written into the runbook (110): an Alertmanager upgrade in production requires a green run
-  against the target version first.
+- Extend the upgrade policy/runbook introduced by 072/074 with automated release reporting and
+  operator triage. A production upgrade still requires a strict green run for its exact target.
 - Keep the vendored v2 client/models and `pkg/labels` dependency current; record any upstream API
   change that affected translation.
 

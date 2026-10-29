@@ -1,6 +1,6 @@
 # 030 — OTel foundation + client identity
 
-**Depends on:** 010 · **Status:** Not started
+**Depends on:** 015 · **Status:** Not started
 
 ## Goal
 
@@ -24,6 +24,8 @@ across traces, metrics and logs — per [ADR decision 4](../../ADR.md#decision-4
   `am_proxy_alerts_received_total`; labels limited per ADR.
 - Logs: `log/slog` JSON + `otelslog` bridge; one access log per request with trace/span IDs.
 - Redaction config for headers (`Authorization`) and optionally silence `comment`/`createdBy`.
+- Basic request/error/latency/client queries support MVP cutover (074) before full dashboards exist.
+  Collector unavailability must not block request forwarding or make accepted writes fail.
 
 ## Explicit non-goals
 

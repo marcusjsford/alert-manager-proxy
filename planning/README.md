@@ -22,3 +22,14 @@ Alertmanager that is **permanent infrastructure**, not a migration shim. It does
 
 The method is carried over from the `code-indexer` project's `planning/` tree, where it was
 developed; lessons quoted in the workflow prompt that originate there are labelled as such.
+
+## Delivery milestones
+
+The first release is **v1 compatibility MVP**: client/target inventory, basic telemetry, the full
+recorded v1 HTTP surface, strict verification against 0.26 and the selected upgrade target, and a
+rehearsed 1:1 deployment/cutover. It ends at story 074. A posting-only demonstration at 040 is an
+intermediate milestone, not evidence that dashboards or silence-management clients work.
+
+Deep v2 inspection, automated fanout detection, dashboards, continuous upstream release tracking,
+v1 retirement, optional replication and the Rust evaluation follow the MVP. See the master plan's
+ordered index; stable story numbers no longer determine priority.

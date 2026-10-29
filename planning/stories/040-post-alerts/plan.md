@@ -1,6 +1,6 @@
 # 040 — `POST /api/v1/alerts`
 
-**Depends on:** 020, 030 · **Status:** Not started
+**Depends on:** 025, 035 · **Status:** Not started
 
 ## Goal
 
@@ -9,8 +9,8 @@ Translate the highest-volume legacy call — old Prometheus servers pushing aler
 
 ## Scope
 
-- Shared v1 envelope package (`{"status":"success","data":…}` / error shape and `errorType` values as
-  recorded in 020's fixtures) — reused by 050–070.
+- Reuse 035's shared v1 routing, headers, envelopes and upstream error helpers; this story owns
+  alert-specific decoding/validation and error mapping.
 - Decode v1 alert list, validate as v0.26 did, map to v2 `PostableAlerts`, translate v2 errors back
   to v1 status codes and envelopes.
 - Telemetry: `am.alerts.count`, alertnames (span only, bounded list), increment
@@ -18,6 +18,9 @@ Translate the highest-volume legacy call — old Prometheus servers pushing aler
   075 emits the same metric for v2.
 - Inputs recorded in [020's findings](../020-v1-contract-capture-and-harness/findings.md): v0.26.0
   validation error strings, v2's different error body shapes, `notjson` vs object-not-array errors.
+- Use the oldest real sender identified in 025 for firing/resolved notification tests. Remove this
+  endpoint from pending.txt only when all its fixtures pass. This is the sender milestone, not the
+  complete v1-client compatibility release.
 
 ## Explicit non-goals
 
@@ -25,4 +28,4 @@ Translate the highest-volume legacy call — old Prometheus servers pushing aler
 
 ## Key files
 
-`internal/v1/envelope/`, `internal/v1/alerts_post.go`.
+`internal/v1/alerts_post.go`, legacy-sender/test-receiver integration.

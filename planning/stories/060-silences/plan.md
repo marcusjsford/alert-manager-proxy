@@ -9,14 +9,15 @@ update-by-id), `DELETE /api/v1/silence/:id` via their v2 equivalents.
 
 ## Scope
 
-- Matcher translation both ways (`name`/`value`/`isRegex`, and `isEqual` if present in 0.26 v1 —
-  confirm from fixtures).
-- Create response: v2 `{"silenceID"}` → v1 envelope with `silenceId` (confirm exact casing from
-  fixtures).
-- Update semantics: v1 POST with an `id` expires the old and creates a new silence — confirm the v2
-  path behaves identically, including the returned ID.
+- Matcher translation both ways (`name`/`value`/`isRegex`/`isEqual`), as recorded in 020.
+- Create response: v2 `{"silenceID"}` → v1 envelope with `silenceId`.
+- Update semantics: preserve the stored ID when the recorded in-place-update conditions hold;
+  changed matchers/startsAt can expire the old silence and create a new ID. Verify against fixtures
+  and the chosen target rather than assuming every update replaces the ID.
 - Error mapping: unknown ID, invalid matchers, `endsAt` before `startsAt`.
 - Telemetry: silence ID, matchers, `createdBy` (subject to 030's redaction config), operation type.
+- Reuse 035's shared HTTP contract; remove the four silence endpoint pending entries as they pass.
+  Exercise required real silence clients from 025, not only synthetic JSON payloads.
 - Inputs recorded in [020's findings](../020-v1-contract-capture-and-harness/findings.md): update is
   in place only when `startsAt` matches the stored value (else a new ID); unknown ID is a plain-text
   404 on GET and a 400 envelope on DELETE in v1 but an empty 404 for both in v2; `isEqual` exists in

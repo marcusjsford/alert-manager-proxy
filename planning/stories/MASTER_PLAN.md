@@ -11,7 +11,7 @@ Source of design decisions: [`../ADR.md`](../ADR.md). Every story inherits it.
 ## Workflow
 
 The full working method lives in [`../STORY_WORKFLOW_PROMPT.md`](../STORY_WORKFLOW_PROMPT.md) — read
-it before starting a story. Short version: pick the lowest-numbered non-`Done` story whose
+it before starting a story. Short version: pick the first non-`Done` story in the ordered index whose
 dependencies are `Done`, cut a worktree/branch for it, read its `plan.md`/`acceptance-criteria.md`,
 verify ground truth (story 020's fixtures) before implementing against an assumption, log findings
 as you go, re-verify every acceptance criterion explicitly, then update that story's status and add a
@@ -23,33 +23,67 @@ short Findings Summary below.
 
 ## Story index
 
+Rows are in execution order, not numeric order. IDs and existing folder names remain stable.
+Finish an in-progress story before selecting the next eligible row.
+
 | # | Story | Depends on | Status | One-line summary |
 |---|---|---|---|---|
 | [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | **Done** | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
-| [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010 | Not started | Make the pushed `ci.yml` actually run green on the local Forgejo; until then `make ci` is the gate |
 | [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | **Done** | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
-| [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 010 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
-| [040](040-post-alerts/) | `POST /api/v1/alerts` | 020, 030 | Not started | The legacy-Prometheus hot path |
+| [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010, 020 | **Done** | Five-job Forgejo CI green; real mutation fails integration; local/remote check parity verified |
+| [025](025-client-inventory-and-upgrade-target/) | Client inventory + upgrade target | 015 | Not started | Identify real legacy clients and their requests, pin the upgrade target, and confirm deployment/auth/topology |
+| [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 015 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
+| [035](035-shared-v1-http-contract/) | Shared v1 HTTP contract | 020, 030 | Not started | Envelopes, routing, CORS/preflight, cache headers, unknown paths/methods, and shared upstream error handling |
+| [040](040-post-alerts/) | `POST /api/v1/alerts` | 025, 035 | Not started | First delivery milestone: real legacy Prometheus sends firing/resolved alerts to a test receiver |
 | [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` | 040 | Not started | Query-param and `filter=` translation, response reshaping (`/alerts/groups` turned out not to exist in v0.26.0 v1) |
 | [060](060-silences/) | Silences | 040 | Not started | List/get/create/update/delete, matcher translation |
 | [070](070-status-and-receivers/) | `status` + `receivers` | 040 | Not started | Reshape v2 status into the v1 layout legacy clients parse |
-| [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030 | Not started | Same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
+| [072](072-target-version-compatibility-gate/) | MVP target-version compatibility gate | 015, 025, 050, 060, 070 | Not started | Strict contract and pass-through gate against 0.26 and the chosen target; real-client and failure-path verification |
+| [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072 | Not started | Deploy 1:1, health/limits/restart/self-alerting, four-node rehearsal, rollback, and human-approved upgrade |
+| [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030, 074 | Not started | Post-MVP: same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
 | [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | Not started | Report clients that post alerts to fewer than all four Alertmanagers |
-| [090](090-opt-in-alert-replication/) | Opt-in alert replication | 080 | Not started | Proxy forwards received alerts to peer Alertmanagers for partial clients |
 | [100](100-alert-path-dashboards/) | Alert-path dashboards | 075, 080 | Not started | Permanent per-client view of the alert path (v1 and v2) + partial fanout; includes the v1-retirement view |
-| [105](105-upstream-release-compatibility/) | Upstream release compatibility | 050, 060, 070 | Not started | Harness runs against each new Alertmanager release in CI; upstream upgrades are gated on it |
-| [110](110-packaging-and-cutover/) | Packaging, operations + cutover | 100, 105 | Not started | Deploy 1:1 with each AM as permanent infra (health, limits, self-alerting), repoint clients, upgrade AM, rollback; `v1.enabled` switch-off procedure |
+| [105](105-upstream-release-compatibility/) | Continuous upstream release compatibility | 072, 075 | Not started | Extend the MVP gate to production/latest and automatically test newly discovered releases |
+| [110](110-packaging-and-cutover/) | Permanent operations + v1 retirement | 074, 100, 105 | Not started | Extend MVP operations with dashboard-backed procedures and the tested `v1.enabled` switch-off/rollback |
+| [090](090-opt-in-alert-replication/) | Opt-in alert replication | 080, 110 | Not started | Later opt-in behaviour change: forward alerts to peers for partial clients, justified by observed need |
 | [120](120-rust-port-evaluation/) | Rust port evaluation | 110 | Not started | Port to Rust; keep only if it measurably wins on footprint/latency and passes the identical harness |
 
-030 can run before or after 020 (both depend only on 010); it is ordered before the translation
-stories so each of them adds its own span attributes rather than retrofitting telemetry at the end.
-075 has the same dependency as 030 alone, but is numbered after the translation stories so it can
-reuse the attribute helpers they settle on.
+## Compatibility MVP — release boundary at 074
+
+- **040 is the alert-sender milestone:** the actual oldest legacy Prometheus delivers firing and
+  resolved notifications through v1 → proxy → v2. It does not establish read/silence/UI compatibility.
+- **074 is the full compatibility MVP:** 025, 030, 035, 040–070, 072 and 074 are complete, all 48
+  current contract exchanges plus estate-specific additions pass with no pending exemptions, and
+  the chosen upgrade is rehearsed and deployed with human approval. Unknown clients are an explicit
+  evidence gap, not assumed compatible. Preserve the existing four-node fanout topology.
+- Basic telemetry and operational error/latency visibility are required. Deep v2 inspection,
+  automated fanout detection, full dashboards, scheduled release discovery, v1 retirement, replication
+  and Rust are post-MVP; they do not gate 074.
+- 072 gates the selected upgrade version now; 105 extends that gate to future releases. 074 owns
+  initial packaging and cutover; 110 owns later permanent-operation refinements and v1 retirement.
 
 Ending v1 translation is an operational step (flip `v1.enabled` once story 100's v1 view shows no
 traffic for the agreed period, procedure in 110), not a story — the proxy itself is not retired.
 
+## 2026-10-29 — Review-driven replan
+
+The user requested an MVP-first execution order. Added 025 (estate evidence), 035 (previously
+unowned HTTP semantics), 072 (strict target gate), and 074 (initial operations/cutover). Removed the
+dashboard/fanout prerequisite from initial cutover and retained those goals after the MVP. Resumed
+the pre-existing clean 015 branch at `215882b`; its five-job push run is green, but its local-only
+mutation branch and absent findings mean the story is not yet Done. Planning amendments travel
+with 015 as the requested roadmap update; no future story implementation is included.
+
 ## Completed Story Summaries
+
+### 015 — Forgejo Actions CI + MVP-first roadmap
+
+Resumed the existing contract-job commit `215882b`; retained Forgejo runs showed it had already
+passed while planning stayed stale. Fresh push run 11 passed build-test, lint, integration, contract
+and docker-build; isolated mutation run 10 failed integration on dropped query strings and skipped
+docker-build. Local make ci and manual check parity passed; the contract's current 0/48 XFAILs
+remain development scaffolding, with strict release gating assigned to new 072. Added 025/035/072/074
+and moved initial cutover ahead of deep observability; shared runner configuration was not changed.
 
 ### 010 — Skeleton + transparent pass-through
 
