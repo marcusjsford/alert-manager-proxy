@@ -105,10 +105,10 @@ func (r *Router) defaultRoutes() []route {
 			http.MethodGet: r.getSilence, http.MethodDelete: r.deleteSilence,
 		}},
 		{exact(statusPath), map[string]http.HandlerFunc{
-			http.MethodGet: nil,
+			http.MethodGet: r.getStatus,
 		}},
 		{exact(receiversPath), map[string]http.HandlerFunc{
-			http.MethodGet: nil,
+			http.MethodGet: r.getReceivers,
 		}},
 	}
 }

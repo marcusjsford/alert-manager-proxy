@@ -1,6 +1,6 @@
 # 070 — `GET /api/v1/status` + `GET /api/v1/receivers`
 
-**Depends on:** 040 · **Status:** Not started
+**Depends on:** 040 · **Status:** Done
 
 ## Goal
 

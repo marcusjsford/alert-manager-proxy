@@ -609,7 +609,7 @@ func TestAbortedRequestStillLogsAndPropagatesAbort(t *testing.T) {
 	}
 }
 
-func TestV1PlaceholderIsObservedWithoutUpstreamCall(t *testing.T) {
+func TestUnknownV1RouteIsObservedWithoutUpstreamCall(t *testing.T) {
 	endpoint, exported := collector(t)
 	upstream := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		t.Error("unimplemented v1 request reached upstream")
@@ -621,12 +621,12 @@ func TestV1PlaceholderIsObservedWithoutUpstreamCall(t *testing.T) {
 	cfg.Clients.Rules = []config.ClientRule{{Name: "legacy-prometheus", UserAgent: `^Prometheus/`}}
 	var output lockedBuffer
 	obs := observer(t, cfg, &output)
-	req := httptest.NewRequest("GET", "/api/v1/status", nil)
+	req := httptest.NewRequest("GET", "/api/v1/nope", nil)
 	req.Header.Set("User-Agent", "Prometheus/2.55.1")
 	recorder := httptest.NewRecorder()
 	server.Handler(cfg, obs.Logger, obs).ServeHTTP(recorder, req)
-	if recorder.Code != http.StatusNotImplemented {
-		t.Fatalf("placeholder changed: %d %s", recorder.Code, recorder.Body.String())
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("unknown route changed: %d %s", recorder.Code, recorder.Body.String())
 	}
 	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
 	defer cancel()
@@ -641,13 +641,13 @@ func TestV1PlaceholderIsObservedWithoutUpstreamCall(t *testing.T) {
 			for _, span := range scope.Spans {
 				count++
 				attrs := values(span.Attributes)
-				if span.Kind != tracepb.Span_SPAN_KIND_SERVER || attrs["client.name"] != "legacy-prometheus" || attrs["am.api.version"] != "v1" || attrs["http.route"] != "/api/v1/status" {
+				if span.Kind != tracepb.Span_SPAN_KIND_SERVER || attrs["client.name"] != "legacy-prometheus" || attrs["am.api.version"] != "v1" || attrs["http.route"] != "/api/v1/*" {
 					t.Fatalf("incorrect v1 request trace: %v", attrs)
 				}
 			}
 		}
 	}
-	if count != 1 || !strings.Contains(output.text(), `"status_code":501`) || !strings.Contains(output.text(), `"am.api.version":"v1"`) {
+	if count != 1 || !strings.Contains(output.text(), `"status_code":404`) || !strings.Contains(output.text(), `"am.api.version":"v1"`) {
 		t.Fatal("v1 placeholder request was not fully observed")
 	}
 }

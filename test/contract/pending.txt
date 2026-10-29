@@ -1,5 +1,3 @@
 # v1 endpoints not translated yet: expected to fail `make contract`.
 # Remove a line in the story that implements it; a pending endpoint that
 # passes (XPASS) fails the run so this list can't go stale.
-GET /api/v1/status
-GET /api/v1/receivers

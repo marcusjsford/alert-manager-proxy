@@ -135,14 +135,15 @@ func TestPassThroughMatchesDirect(t *testing.T) {
 		assertSame(t, direct, proxied, "/api/v2/silences")
 	})
 
-	t.Run("GET /api/v1/status is owned by the proxy", func(t *testing.T) {
+	t.Run("GET /api/v1/status is translated by the proxy", func(t *testing.T) {
 		d := do(t, direct, http.MethodGet, "/api/v1/status", "")
 		p := do(t, proxied, http.MethodGet, "/api/v1/status", "")
 		if d.status != http.StatusGone {
 			t.Errorf("upstream answered v1 with %d; expected 410 from a v1-less Alertmanager", d.status)
 		}
-		if p.status != http.StatusNotImplemented {
-			t.Errorf("proxy answered v1 with %d, want 501", p.status)
+		if p.status != http.StatusOK || !bytes.Contains(p.body, []byte(`"status":"success"`)) ||
+			!bytes.Contains(p.body, []byte(`"configYAML"`)) || !bytes.Contains(p.body, []byte(`"configJSON"`)) {
+			t.Errorf("proxy v1 status = %d %s", p.status, p.body)
 		}
 	})
 }

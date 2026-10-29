@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"io"
 	"log/slog"
 	"net"
@@ -112,21 +111,7 @@ func TestV1RoutesAreOwnedByTheProxy(t *testing.T) {
 	defer upstream.Close()
 	proxy := newProxy(t, upstream.URL, nil)
 
-	for _, path := range []string{"/api/v1/status", "/api/v1/receivers"} {
-		resp, err := http.Get(proxy.URL + path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var body map[string]string
-		_ = json.NewDecoder(resp.Body).Decode(&body)
-		resp.Body.Close()
-		if resp.StatusCode != http.StatusNotImplemented {
-			t.Errorf("%s: status %d, want 501", path, resp.StatusCode)
-		}
-		if body["status"] != "error" || body["errorType"] == "" || body["error"] == "" {
-			t.Errorf("%s: not a v1 error envelope: %v", path, body)
-		}
-	}
+	// Unknown v1 paths are answered by the proxy, not forwarded.
 	for _, path := range []string{"/api/v1", "/api/v1/nope", "/api/v1/alerts/groups"} {
 		resp, err := http.Get(proxy.URL + path)
 		if err != nil {
@@ -138,7 +123,7 @@ func TestV1RoutesAreOwnedByTheProxy(t *testing.T) {
 		}
 	}
 	if upstreamHit {
-		t.Error("v1 request reached the upstream")
+		t.Error("unknown v1 request reached the upstream")
 	}
 
 	// A path that merely starts with the same characters is not v1.
