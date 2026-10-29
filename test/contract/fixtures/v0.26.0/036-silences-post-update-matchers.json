@@ -4,7 +4,7 @@
   "request": {
     "method": "POST",
     "path": "/api/v1/silences",
-    "body": "{\"id\":\"362e5ffc-c147-4e9b-840d-07237fd5fdb3\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false},{\"name\":\"team\",\"value\":\"web\",\"isRegex\":false}],\"startsAt\":\"2026-10-29T12:43:08.576870545Z\",\"endsAt\":\"2026-10-29T15:42:58.921Z\",\"createdBy\":\"alice\",\"comment\":\"narrowed\"}"
+    "body": "{\"id\":\"d99271cc-b253-4f6f-9c2e-fab6f40b8054\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false},{\"name\":\"team\",\"value\":\"web\",\"isRegex\":false}],\"startsAt\":\"2026-10-29T14:20:00.326513927Z\",\"endsAt\":\"2026-10-29T17:19:50.648Z\",\"createdBy\":\"alice\",\"comment\":\"narrowed\"}"
   },
   "response": {
     "status": 200,
@@ -16,6 +16,6 @@
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Content-Type": "application/json"
     },
-    "body": "{\"status\":\"success\",\"data\":{\"silenceId\":\"db674288-9d76-4620-8fa2-011baa801072\"}}"
+    "body": "{\"status\":\"success\",\"data\":{\"silenceId\":\"42b1931a-0db1-4f68-ab4b-5730e9a889bb\"}}"
   }
 }

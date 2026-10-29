@@ -4,7 +4,7 @@
   "request": {
     "method": "POST",
     "path": "/api/v1/silences",
-    "body": "{\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-29T12:42:58.921Z\",\"endsAt\":\"2026-10-29T14:42:58.921Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\"}"
+    "body": "{\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-29T14:19:50.648Z\",\"endsAt\":\"2026-10-29T16:19:50.648Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\"}"
   },
   "response": {
     "status": 200,
@@ -16,6 +16,6 @@
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Content-Type": "application/json"
     },
-    "body": "{\"status\":\"success\",\"data\":{\"silenceId\":\"f7987ed5-8249-4b17-95b5-82e2a0afbc5f\"}}"
+    "body": "{\"status\":\"success\",\"data\":{\"silenceId\":\"3e16373e-6bde-4307-87be-494a4640e7c5\"}}"
   }
 }

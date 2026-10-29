@@ -56,6 +56,10 @@ not the unknown estate oldest sender.
   `alert.timestamps` lossy event/counter.
 - Existing tests cover refused/slow/cancelled upstreams, timeout/recovery, failed-write status,
   auth forwarding and non-v1 pass-through.
+- The target contract CI run exposed an ordering flake: the first v1 alert read could happen before
+  v2 had applied the DiskFull → SlowQueries inhibition. A `setup-inhibition-applied` v2 wait now
+  settles that state before the first alert comparison; all 48 fixtures were re-recorded and the
+  two-recording determinism check passes.
 
 ## Verification
 

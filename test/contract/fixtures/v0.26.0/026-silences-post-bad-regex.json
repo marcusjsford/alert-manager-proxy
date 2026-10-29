@@ -4,7 +4,7 @@
   "request": {
     "method": "POST",
     "path": "/api/v1/silences",
-    "body": "{\"matchers\":[{\"name\":\"a\",\"value\":\"(\",\"isRegex\":true}],\"startsAt\":\"2026-10-29T12:42:58.921Z\",\"endsAt\":\"2026-10-29T13:42:58.921Z\",\"createdBy\":\"x\",\"comment\":\"y\"}"
+    "body": "{\"matchers\":[{\"name\":\"a\",\"value\":\"(\",\"isRegex\":true}],\"startsAt\":\"2026-10-29T14:19:50.648Z\",\"endsAt\":\"2026-10-29T15:19:50.648Z\",\"createdBy\":\"x\",\"comment\":\"y\"}"
   },
   "response": {
     "status": 400,

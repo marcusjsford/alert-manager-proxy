@@ -3,7 +3,7 @@
   "endpoint": "GET /api/v1/silence/{id}",
   "request": {
     "method": "GET",
-    "path": "/api/v1/silence/f7987ed5-8249-4b17-95b5-82e2a0afbc5f"
+    "path": "/api/v1/silence/3e16373e-6bde-4307-87be-494a4640e7c5"
   },
   "response": {
     "status": 200,
@@ -15,6 +15,6 @@
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Content-Type": "application/json"
     },
-    "body": "{\"status\":\"success\",\"data\":{\"id\":\"f7987ed5-8249-4b17-95b5-82e2a0afbc5f\",\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-29T12:43:08.578182806Z\",\"endsAt\":\"2026-10-29T12:43:08.595275618Z\",\"updatedAt\":\"2026-10-29T12:43:08.595275618Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\",\"status\":{\"state\":\"expired\"}}}"
+    "body": "{\"status\":\"success\",\"data\":{\"id\":\"3e16373e-6bde-4307-87be-494a4640e7c5\",\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-29T14:20:00.327307285Z\",\"endsAt\":\"2026-10-29T14:20:00.34338329Z\",\"updatedAt\":\"2026-10-29T14:20:00.34338329Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\",\"status\":{\"state\":\"expired\"}}}"
   }
 }
