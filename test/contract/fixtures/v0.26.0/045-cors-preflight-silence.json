@@ -3,7 +3,7 @@
   "endpoint": "OPTIONS /api/v1/*",
   "request": {
     "method": "OPTIONS",
-    "path": "/api/v1/silence/fa08b0d5-15cc-4019-b49e-70d13b8589fd"
+    "path": "/api/v1/silence/db674288-9d76-4620-8fa2-011baa801072"
   },
   "response": {
     "status": 200,

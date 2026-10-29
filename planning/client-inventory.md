@@ -79,8 +79,8 @@ lab sender above is reproducible now. Add one row per actual client once identif
 | `test/contract/alertmanager.yml` | Synthetic routes/receivers, inhibition and secret-masking cases | Real receiver URLs, users or credentials |
 
 For concrete baseline examples, see `001-alerts-post-valid.json`,
-`007-alerts-get-filter-braces.json`, `017-silences-post-create.json`,
-`034-silences-post-update-extend.json`, `042-status-get.json` and `044-cors-preflight-alerts.json`
+`007-alerts-get-filter-braces.json`, `021-silences-post-create.json`,
+`035-silences-post-update-extend.json`, `042-status-get.json` and `044-cors-preflight-alerts.json`
 under `test/contract/fixtures/v0.26.0/`. Do not label these as production captures.
 
 ## Collection and follow-through

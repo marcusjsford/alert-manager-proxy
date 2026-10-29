@@ -47,6 +47,11 @@ type normaliser struct {
 // Fingerprints are kept: they are a hash of the label set alone.
 func Normalise(run Run) []Normalised {
 	n := normaliser{ref: run.Meta.RefTime, uuids: map[string]string{}}
+	for _, id := range run.Meta.UUIDSeeds {
+		if _, ok := n.uuids[id]; !ok {
+			n.uuids[id] = fmt.Sprintf("<uuid:%d>", len(n.uuids)+1)
+		}
+	}
 	out := make([]Normalised, 0, len(run.Exchanges))
 	for _, ex := range run.Exchanges {
 		var body any
@@ -81,6 +86,12 @@ func (n *normaliser) value(v any, parentKey string) any {
 		}
 		return out
 	case []any:
+		// Set-valued arrays have no meaningful order. Sort the raw values
+		// before assigning UUID placeholders, so which ID becomes <uuid:1>
+		// does not depend on Alertmanager's random iteration order.
+		if setKeys[parentKey] {
+			sort.Slice(t, func(i, j int) bool { return fmt.Sprint(t[i]) < fmt.Sprint(t[j]) })
+		}
 		out := make([]any, len(t))
 		for i, child := range t {
 			// Array elements inherit the array's key so rules like "peers" apply.

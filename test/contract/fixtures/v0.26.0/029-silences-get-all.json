@@ -1,0 +1,20 @@
+{
+  "step": "silences-get-all",
+  "endpoint": "GET /api/v1/silences",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/silences"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Headers": "Accept, Authorization, Content-Type, Origin",
+      "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Date",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"status\":\"success\",\"data\":[{\"id\":\"362e5ffc-c147-4e9b-840d-07237fd5fdb3\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false,\"isEqual\":true}],\"startsAt\":\"2026-10-29T12:43:08.576870545Z\",\"endsAt\":\"2026-10-29T13:42:58.921Z\",\"updatedAt\":\"2026-10-29T12:43:08.576870545Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance\",\"status\":{\"state\":\"active\"}},{\"id\":\"f7987ed5-8249-4b17-95b5-82e2a0afbc5f\",\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-29T12:43:08.578182806Z\",\"endsAt\":\"2026-10-29T14:42:58.921Z\",\"updatedAt\":\"2026-10-29T12:43:08.578182806Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\",\"status\":{\"state\":\"active\"}},{\"id\":\"e9b3cc1d-58af-4fb3-9254-8333075230ba\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false,\"isEqual\":true}],\"startsAt\":\"2026-10-29T12:43:08.562408668Z\",\"endsAt\":\"2026-10-29T12:43:08.575182797Z\",\"updatedAt\":\"2026-10-29T12:43:08.575182797Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance\",\"status\":{\"state\":\"expired\"}},{\"id\":\"7a47625d-e96f-4331-a258-6d0c25db0c36\",\"matchers\":[{\"name\":\"team\",\"value\":\"d.*\",\"isRegex\":true,\"isEqual\":false}],\"startsAt\":\"2026-10-29T12:43:08.563929428Z\",\"endsAt\":\"2026-10-29T12:43:08.571596991Z\",\"updatedAt\":\"2026-10-29T12:43:08.571596991Z\",\"createdBy\":\"bob\",\"comment\":\"everything but db\",\"status\":{\"state\":\"expired\"}}]}"
+  }
+}

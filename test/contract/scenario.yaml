@@ -71,6 +71,63 @@ steps:
   - {name: alerts-get-unprocessed-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?unprocessed=false'}
   - {name: alerts-get-bool-invalid, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=maybe'}
 
+  # ── alert state after silencing (v2 setup) ──────────────────────────────
+  # v1 POST/DELETE /silences belongs to story 060. Create and delete the
+  # silence state that GET /alerts needs through v2 setup, so every GET fixture
+  # remains verifiable before 060 lands. The v1 silence operations run below,
+  # after all GET /alerts comparisons, so they cannot affect them.
+  - name: setup-silence-create-v2
+    endpoint: setup
+    method: POST
+    path: /api/v2/silences
+    body: '{"matchers":[{"name":"alertname","value":"HighLatency","isRegex":false,"isEqual":true}],"startsAt":"${now}","endsAt":"${now+1h}","createdBy":"alice","comment":"maintenance"}'
+    capture: {vsil1: silenceID}
+  - name: setup-silence-create-negative-v2
+    endpoint: setup
+    method: POST
+    path: /api/v2/silences
+    body: '{"matchers":[{"name":"team","value":"d.*","isRegex":true,"isEqual":false}],"startsAt":"${now}","endsAt":"${now+2h}","createdBy":"bob","comment":"everything but db"}'
+    capture: {vsil2: silenceID}
+  # v0.26.0's v1 GET /alerts does not recompute silence state (it reports the
+  # marker as the pipeline last left it); a v2 GET does, and updates the marker
+  # v1 reads. So settle via v2 first, then compare v1. See story 020 findings.
+  - name: setup-silences-applied
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22Orphan%22'
+    wait_for: {contains: '"suppressed"'}
+  - name: setup-silences-applied-highlatency
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22HighLatency%22'
+    wait_for: {contains: '"suppressed"'}
+  - {name: alerts-get-all-after-silences, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}
+  - {name: alerts-get-silenced-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=false'}
+  - {name: alerts-get-silenced-false-inhibited-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=false&inhibited=false'}
+
+  # Delete only the negative-regex silence for the "after delete" fixture.
+  - name: setup-silence-delete-v2
+    endpoint: setup
+    method: DELETE
+    path: '/api/v2/silence/${vsil2}'
+  - name: setup-delete-applied
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22Orphan%22'
+    wait_for: {contains: '"active"'}
+  - {name: alerts-get-all-after-delete, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}
+
+  # Expire the remaining setup silence before the v1 silence fixtures.
+  - name: setup-silence-delete-remaining-v2
+    endpoint: setup
+    method: DELETE
+    path: '/api/v2/silence/${vsil1}'
+  - name: setup-remaining-delete-applied
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22HighLatency%22'
+    wait_for: {contains: '"active"'}
+
   # ── POST /api/v1/silences ───────────────────────────────────────────────
   - name: silences-post-create
     endpoint: POST /api/v1/silences
@@ -115,24 +172,6 @@ steps:
     path: /api/v1/silences
     body: 'notjson'
 
-  # ── alert state after silencing ─────────────────────────────────────────
-  # v0.26.0's v1 GET /alerts does not recompute silence state (it reports the
-  # marker as the pipeline last left it); a v2 GET does, and updates the marker
-  # v1 reads. So settle via v2 first, then compare v1. See story 020 findings.
-  - name: setup-silences-applied
-    endpoint: setup
-    method: GET
-    path: '/api/v2/alerts?filter=alertname%3D%22Orphan%22'
-    wait_for: {contains: '"suppressed"'}
-  - name: setup-silences-applied-highlatency
-    endpoint: setup
-    method: GET
-    path: '/api/v2/alerts?filter=alertname%3D%22HighLatency%22'
-    wait_for: {contains: '"suppressed"'}
-  - {name: alerts-get-all-after-silences, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}
-  - {name: alerts-get-silenced-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=false'}
-  - {name: alerts-get-silenced-false-inhibited-false, endpoint: GET /api/v1/alerts, method: GET, path: '/api/v1/alerts?silenced=false&inhibited=false'}
-
   # ── GET /api/v1/silences, GET /api/v1/silence/{id} ──────────────────────
   - {name: silences-get-all, endpoint: GET /api/v1/silences, method: GET, path: /api/v1/silences}
   - {name: silences-get-filter, endpoint: GET /api/v1/silences, method: GET, path: '/api/v1/silences?filter=%7Balertname%3D%22HighLatency%22%7D'}
@@ -167,12 +206,6 @@ steps:
   - {name: silence-delete-again, endpoint: 'DELETE /api/v1/silence/{id}', method: DELETE, path: '/api/v1/silence/${sil2}'}
   - {name: silence-delete-unknown, endpoint: 'DELETE /api/v1/silence/{id}', method: DELETE, path: /api/v1/silence/00000000-0000-0000-0000-000000000000}
   - {name: silence-get-deleted, endpoint: 'GET /api/v1/silence/{id}', method: GET, path: '/api/v1/silence/${sil2}'}
-  - name: setup-delete-applied
-    endpoint: setup
-    method: GET
-    path: '/api/v2/alerts?filter=alertname%3D%22Orphan%22'
-    wait_for: {contains: '"active"'}
-  - {name: alerts-get-all-after-delete, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}
 
   # ── status, receivers ───────────────────────────────────────────────────
   - {name: status-get, endpoint: GET /api/v1/status, method: GET, path: /api/v1/status}

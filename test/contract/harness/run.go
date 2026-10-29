@@ -41,6 +41,10 @@ type Meta struct {
 	AlertmanagerVersion string    `json:"alertmanagerVersion"`
 	RefTime             time.Time `json:"refTime"`
 	ScenarioSHA256      string    `json:"scenarioSha256"`
+	// UUIDSeeds lists UUIDs in scenario execution order, including uncompared
+	// setup responses. The normaliser uses it so placeholders follow creation
+	// order rather than Alertmanager's random map iteration order.
+	UUIDSeeds []string `json:"uuidSeeds,omitempty"`
 }
 
 // Run is the result of executing a scenario.
@@ -93,6 +97,7 @@ func (r *Runner) Execute(ctx context.Context, sc Scenario) (Run, error) {
 	ref := time.Now().UTC()
 	vars := map[string]string{}
 	run := Run{Meta: Meta{Target: r.Target, RefTime: ref, ScenarioSHA256: sc.SHA256}}
+	seenUUIDs := map[string]bool{}
 
 	for _, st := range sc.Steps {
 		path := Expand(st.Path, ref, vars)
@@ -109,6 +114,12 @@ func (r *Runner) Execute(ctx context.Context, sc Scenario) (Run, error) {
 		resp, err := r.do(ctx, st.Method, path, st.Headers, body)
 		if err != nil {
 			return run, fmt.Errorf("step %q: %w", st.Name, err)
+		}
+		for _, id := range uuidRe.FindAllString(resp.Body, -1) {
+			if !seenUUIDs[id] {
+				seenUUIDs[id] = true
+				run.Meta.UUIDSeeds = append(run.Meta.UUIDSeeds, id)
+			}
 		}
 		for name, jpath := range st.Capture {
 			if v, ok := lookup(resp.Body, jpath); ok {

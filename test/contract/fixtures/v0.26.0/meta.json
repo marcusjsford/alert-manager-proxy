@@ -1,6 +1,13 @@
 {
   "target": "http://127.0.0.1:19126",
   "alertmanagerVersion": "0.26.0",
-  "refTime": "2026-10-04T23:09:10.722675988Z",
-  "scenarioSha256": "6539fe0b55fcaa9b31bad4bd7f160020365bcf3046dbdaaedcf2fdcf6da0ce44"
+  "refTime": "2026-10-29T12:42:58.92137301Z",
+  "scenarioSha256": "248e7ef3c5e45b5a910c0a5f7bf77a0d53e527baed76f1aeca97b3e13d37c0ba",
+  "uuidSeeds": [
+    "e9b3cc1d-58af-4fb3-9254-8333075230ba",
+    "7a47625d-e96f-4331-a258-6d0c25db0c36",
+    "362e5ffc-c147-4e9b-840d-07237fd5fdb3",
+    "f7987ed5-8249-4b17-95b5-82e2a0afbc5f",
+    "db674288-9d76-4620-8fa2-011baa801072"
+  ]
 }

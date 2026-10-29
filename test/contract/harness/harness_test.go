@@ -117,3 +117,21 @@ func TestReportVerdicts(t *testing.T) {
 		})
 	}
 }
+
+func TestNormaliseSeedsUUIDOrder(t *testing.T) {
+	const (
+		idA1 = "11111111-1111-4111-8111-111111111111"
+		idA2 = "99999999-9999-4999-8999-999999999999"
+		idB1 = "88888888-8888-4888-8888-888888888888"
+		idB2 = "22222222-2222-4222-8222-222222222222"
+	)
+	a := run(ref, `{"status":{"silencedBy":["`+idA1+`","`+idA2+`"]}}`, `{"id":"`+idA2+`"}`)
+	a.Meta.UUIDSeeds = []string{idA1, idA2}
+	b := run(ref, `{"status":{"silencedBy":["`+idB1+`","`+idB2+`"]}}`, `{"id":"`+idB2+`"}`)
+	b.Meta.UUIDSeeds = []string{idB1, idB2}
+	for _, result := range Compare(a, b) {
+		if len(result.Diffs) > 0 {
+			t.Errorf("step %s: %v", result.Step, result.Diffs)
+		}
+	}
+}

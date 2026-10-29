@@ -3,7 +3,7 @@
   "endpoint": "DELETE /api/v1/silence/{id}",
   "request": {
     "method": "DELETE",
-    "path": "/api/v1/silence/bc4af758-6306-4710-ac3a-4ee369ed8900"
+    "path": "/api/v1/silence/f7987ed5-8249-4b17-95b5-82e2a0afbc5f"
   },
   "response": {
     "status": 200,
