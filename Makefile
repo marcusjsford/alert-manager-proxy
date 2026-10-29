@@ -4,10 +4,11 @@ LINT_IMAGE ?= golangci/golangci-lint:v2.14.0
 AM_PORT ?= 19093
 COMPOSE = docker compose -f test/integration/docker-compose.yml -p amp-integration
 CONTRACT_COMPOSE = docker compose -f test/contract/docker-compose.yml -p amp-contract
+LAB_COMPOSE = docker compose -f test/lab/docker-compose.yml -p amp-lab
 CONTRACT = go run ./test/contract/cmd/contract
 FIXTURES = test/contract/fixtures/v0.26.0
 
-.PHONY: build test lint integration contract contract-record contract-determinism docker ci clean
+.PHONY: build test lint integration contract contract-record contract-determinism lab lab-check lab-down docker ci clean
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/alertmanager-proxy ./cmd/alertmanager-proxy
@@ -50,11 +51,21 @@ contract-determinism:
 	done; \
 	$(CONTRACT) compare -a $$tmp/a -b $$tmp/b; status=$$?; rm -rf $$tmp; exit $$status
 
+# Persistent, isolated development environment; separate from disposable CI rigs.
+lab:
+	$(LAB_COMPOSE) up -d --build --wait --wait-timeout 90
+
+lab-check:
+	go test -race -tags lab -count=1 -timeout=2m -v ./test/lab/
+
+lab-down:
+	$(LAB_COMPOSE) down -v
+
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
 
-# Everything the Forgejo pipeline runs, locally: the merge gate while CI on the
-# local Forgejo runner isn't working (story 010 findings).
+# Everything the Forgejo pipeline runs, locally. The persistent manual lab is
+# separate; integration and contract create and remove their own environments.
 ci: build test lint integration contract docker
 
 clean:

@@ -1,10 +1,13 @@
 # 025 — Acceptance criteria
 
-- [ ] Inventory records client versions, owners, used endpoints, fanout and sanitised example calls;
-      unavailable evidence is named, with an owner and a concrete way to obtain it.
-- [ ] Oldest real legacy Prometheus and each required read/silence/status client are identified and
-      reproducible for 040/060/070/072 tests. Missing access blocks the relevant claim of compatibility.
-- [ ] Production version, exact upgrade target and deployment/auth/path/topology requirements are
-      recorded and confirmed with the operator; a test default is not presented as that confirmation.
-- [ ] Any newly discovered request shapes have fixtures recorded from real 0.26; determinism and
-      existing harness checks still pass.
+- [x] Inventory records operator-confirmed current 0.26.0, selected target 0.34.1 and three-instance
+      Kubernetes destination, plus the Docker-only development scope and old-endpoint retirement intent.
+- [x] Unknown production client versions, owners, auth/path/manifests and cutover details have a
+      concrete collection plan and remain explicit 072/074 validation requirements. Representative
+      test clients are not labelled as the estate's actual or oldest clients.
+- [x] Start/check/stop commands bring up an isolated three-instance 0.34.1 cluster with three proxies,
+      an independent 0.26.0 reference, notification receiver and pinned v1-capable Prometheus.
+- [x] Checks prove three-member readiness, v2 pass-through, firing/resolved notifications, silence
+      gossip and real Prometheus v1 delivery to 0.26.0; current proxy v1 failures are reported honestly.
+- [x] Newly discovered request shapes, if any, are recorded from 0.26 before implementation; existing
+      fixtures/scenario are preserved otherwise, and required existing checks remain green.

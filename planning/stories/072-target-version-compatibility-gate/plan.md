@@ -14,8 +14,10 @@ upgrade target before cutover, with a release gate that cannot accept expected f
   from 025 must pass; regular development XFAILs must not qualify a release.
 - Parameterise the contract and pass-through version pins so CI tests proxy → 0.26 and proxy →
   the selected target. Account for native v1 presence on 0.26 in integration assertions.
-- Exercise real legacy clients from 025, including firing/resolved delivery, silence mutation and
-  suppression, filters, status parsing and clients that inspect versionInfo.
+- Exercise 025's representative client plus actual estate clients identified before production,
+  including the oldest sender, silence mutation/suppression, filters, status parsing and clients
+  that inspect versionInfo. Obtain the outstanding client versions and production auth/path/
+  manifest requirements listed in the inventory; Docker success does not discharge these gaps.
 - Add targeted assertions for behaviour masked by normalisation (versionInfo policy and timestamp
   precision), keeping only documented/observable compatibility differences.
 - Verify translated writes under upstream failure, timeout and recovery, required auth/path
