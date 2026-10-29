@@ -63,6 +63,9 @@ jobs:
           AMP_IT_UPSTREAM_URL: http://alertmanager:9093
 
   integration-v026:
+    # Act runner shares one network between jobs; run after the target service
+    # so the `alertmanager` service alias cannot resolve to the other version.
+    needs: [integration]
     runs-on: docker
     container:
       image: golang:1.26
