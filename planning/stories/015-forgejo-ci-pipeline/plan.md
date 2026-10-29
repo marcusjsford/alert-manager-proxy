@@ -1,6 +1,6 @@
 # 015 — Forgejo Actions CI pipeline working
 
-**Depends on:** 010, 020 · **Status:** In progress
+**Depends on:** 010, 020 · **Status:** Done
 
 ## Goal
 

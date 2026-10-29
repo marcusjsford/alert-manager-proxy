@@ -2,7 +2,7 @@
 
 - [x] The reported CI gap is investigated using real run/job evidence, with verified causes and
       any unavailable historical evidence explicitly distinguished in `findings.md`.
-- [ ] A real push runs all five jobs (`build-test`, `lint`, `integration`, `contract`, `docker-build`) green
+- [x] A real push runs all five jobs (`build-test`, `lint`, `integration`, `contract`, `docker-build`) green
       on the local Forgejo (moved here from story 010).
 - [x] `integration` really runs against the Alertmanager service: a deliberately broken branch
       fails it.

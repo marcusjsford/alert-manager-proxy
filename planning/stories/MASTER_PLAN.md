@@ -30,7 +30,7 @@ Finish an in-progress story before selecting the next eligible row.
 |---|---|---|---|---|
 | [010](010-skeleton-and-passthrough/) | Skeleton + transparent pass-through | — | **Done** | Go module, config, reverse proxy that passes every path through unchanged, Dockerfile, CI; accepts the ADR |
 | [020](020-v1-contract-capture-and-harness/) | v1 contract capture + diff harness | 010 | **Done** | Record fixtures for every v1 endpoint from a real AM v0.26.0; black-box harness replays them against proxy → current AM and diffs |
-| [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010, 020 | **In progress** | Resume existing contract-job commit; verify five-job CI, mutation failure, and local/remote check parity |
+| [015](015-forgejo-ci-pipeline/) | Forgejo Actions CI working | 010, 020 | **Done** | Five-job Forgejo CI green; real mutation fails integration; local/remote check parity verified |
 | [025](025-client-inventory-and-upgrade-target/) | Client inventory + upgrade target | 015 | Not started | Identify real legacy clients and their requests, pin the upgrade target, and confirm deployment/auth/topology |
 | [030](030-otel-foundation-and-client-identity/) | OTel foundation + client identity | 015 | Not started | Traces, metrics, logs over OTLP; config-driven client identification; per-instance identity |
 | [035](035-shared-v1-http-contract/) | Shared v1 HTTP contract | 020, 030 | Not started | Envelopes, routing, CORS/preflight, cache headers, unknown paths/methods, and shared upstream error handling |
@@ -75,6 +75,15 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 015 — Forgejo Actions CI + MVP-first roadmap
+
+Resumed the existing contract-job commit `215882b`; retained Forgejo runs showed it had already
+passed while planning stayed stale. Fresh push run 11 passed build-test, lint, integration, contract
+and docker-build; isolated mutation run 10 failed integration on dropped query strings and skipped
+docker-build. Local make ci and manual check parity passed; the contract's current 0/48 XFAILs
+remain development scaffolding, with strict release gating assigned to new 072. Added 025/035/072/074
+and moved initial cutover ahead of deep observability; shared runner configuration was not changed.
 
 ### 010 — Skeleton + transparent pass-through
 

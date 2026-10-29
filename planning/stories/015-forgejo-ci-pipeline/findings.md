@@ -78,3 +78,17 @@ must never be merged.
 One-off roadmap consistency verification passed: all 19 folders have the required three files,
 master/plan dependency and status copies agree, every dependency precedes its consumer, and 074's
 ancestors contain the compatibility work but none of the post-MVP observability/retirement stories.
+
+## 2026-10-29 — Fresh story push green; criteria re-verified
+
+Committed/pushed the roadmap and findings as `1f32994`.
+[Run 11](http://localhost:3000/gitadmin/alertmanager-proxy/actions/runs/11), internal run ID 8530,
+passed all five jobs: build-test 19922, lint 19923, integration 19924, contract 19925 and docker-build
+19926. The contract log confirms the AM tarball checksum and the expected ten-category 0/48 XFAIL
+table against upstream 0.34.1. The workflow is unchanged from the previously green `215882b`;
+new changes are planning/evidence only.
+
+All six amended acceptance criteria were re-checked against the retained/fresh run evidence,
+mutation run 10, local make ci, manual parity table and roadmap consistency check. Marked 015 Done
+in this story branch; it remains unmerged, so main still reflects the old roadmap until review/merge.
+The next planned story after merge is 025. No shared-runner or production deployment changes.
