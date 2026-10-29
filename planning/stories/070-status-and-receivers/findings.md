@@ -77,4 +77,8 @@ claim.
   receiver through the v1 endpoints, alongside the existing alert/silence checks.
 - Integration now asserts the real upstream answers v1 with 410 while the proxy returns the
   translated success payload.
+- Push CI exposed that status `uptime` is relative to process start, so a slow CI build made
+  the recorded `<now>` become `<now-1m>`. The contract normaliser now masks `uptime` as
+  `<uptime>` (it is inherently startup-timing-dependent), alongside versionInfo and peer
+  identities.
 - `go test -race ./...`, all-tag `go vet`/lint (0 issues) and full `make ci` pass.

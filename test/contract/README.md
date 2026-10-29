@@ -22,7 +22,7 @@ endpoints too.
 start (`<now+60m>`), silence UUIDs become `<uuid:N>` in scenario execution order (including
 uncompared v2 setup responses; set-valued `silencedBy`/`inhibitedBy` arrays are sorted before any
 remaining placeholders are assigned, because their order is meaningless), version info and cluster
-peer identities are masked. Fingerprints, `null` vs `[]`,
+peer identities and the status `uptime` are masked. Fingerprints, `null` vs `[]`,
 field presence, array order (other than the sets above), status codes, error strings and the
 contract headers (`Content-Type`, `Cache-Control`, CORS) are all compared.
 

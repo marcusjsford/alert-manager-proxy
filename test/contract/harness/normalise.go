@@ -76,6 +76,10 @@ func (n *normaliser) value(v any, parentKey string) any {
 			switch {
 			case k == "versionInfo":
 				out[k] = "<versionInfo>"
+			case k == "uptime":
+				// Process start time: its offset from the run's reference time
+				// depends on how long the target took to start/build.
+				out[k] = "<uptime>"
 			case (parentKey == "clusterStatus" || parentKey == "cluster" || parentKey == "peers") && k == "name":
 				out[k] = "<peer-name>"
 			case (parentKey == "peers") && k == "address":
