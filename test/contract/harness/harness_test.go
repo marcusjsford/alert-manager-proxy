@@ -2,6 +2,7 @@ package harness
 
 import (
 	"bytes"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -133,5 +134,21 @@ func TestNormaliseSeedsUUIDOrder(t *testing.T) {
 		if len(result.Diffs) > 0 {
 			t.Errorf("step %s: %v", result.Step, result.Diffs)
 		}
+	}
+}
+
+func TestStrictGateRejectsFailures(t *testing.T) {
+	failing := []StepResult{{Step: "broken", Endpoint: "GET /x", Diffs: []string{"translation mismatch"}}}
+	if Report(io.Discard, failing, nil, false) {
+		t.Fatal("strict gate accepted a failing translation with an empty pending list")
+	}
+}
+
+func TestStrictPending(t *testing.T) {
+	if err := CheckStrictPending(nil); err != nil {
+		t.Fatalf("empty pending list rejected: %v", err)
+	}
+	if err := CheckStrictPending(map[string]bool{"GET /x": true}); err == nil {
+		t.Fatal("non-empty pending list accepted in strict mode")
 	}
 }

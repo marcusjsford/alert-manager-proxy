@@ -38,7 +38,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [050](050-get-alerts-and-groups/) | `GET /api/v1/alerts` | 040 | **Done** | Query-param and `filter=` translation, response reshaping (`/alerts/groups` turned out not to exist in v0.26.0 v1) |
 | [060](060-silences/) | Silences | 040 | **Done** | List/get/create/update/delete, matcher translation |
 | [070](070-status-and-receivers/) | `status` + `receivers` | 040 | **Done** | Reshape v2 status into the v1 layout legacy clients parse |
-| [072](072-target-version-compatibility-gate/) | MVP target-version compatibility gate | 015, 025, 050, 060, 070 | Not started | Strict contract and pass-through gate against 0.26 and the chosen target; real-client and failure-path verification |
+| [072](072-target-version-compatibility-gate/) | MVP target-version compatibility gate | 015, 025, 050, 060, 070 | **Done** | Strict contract and pass-through gate against 0.26 and 0.34.1; representative-client and failure-path verification |
 | [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover |
 | [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030, 074 | Not started | Post-MVP: same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
 | [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | Not started | Report clients that post alerts to fewer than all three Alertmanagers |
@@ -52,7 +52,8 @@ Finish an in-progress story before selecting the next eligible row.
 
 - **040 is the development alert-sender milestone:** the pinned representative Prometheus delivers
   firing/resolved notifications through v1 → proxy → v2. Actual estate client compatibility remains
-  a mandatory 072/074 production gate, as does read/silence/UI compatibility.
+  a mandatory 074 production gate, as does read/silence/UI compatibility; 072 is the development/CI
+  gate against both versions.
 - **074 is the full compatibility MVP:** 025, 030, 035, 040–070, 072 and 074 are complete, all 48
   current contract exchanges plus estate-specific additions pass with no pending exemptions, and
   the chosen upgrade is rehearsed and deployed with human approval. Unknown clients are an explicit
@@ -61,7 +62,8 @@ Finish an in-progress story before selecting the next eligible row.
   automated fanout detection, full dashboards, scheduled release discovery, v1 retirement, replication
   and Rust are post-MVP; they do not gate 074.
 - 072 gates the selected upgrade version now; 105 extends that gate to future releases. 074 owns
-  initial packaging and cutover; 110 owns later permanent-operation refinements and v1 retirement.
+  initial packaging, estate client evidence and cutover; 110 owns later permanent-operation refinements
+  and v1 retirement.
 - Operator confirmed current 0.26.0, target 0.34.1 and three instances on Kubernetes in 025.
   [Client inventory](../client-inventory.md) records remaining client/deployment evidence and the
   distinction between deprecating old direct endpoints and disabling the proxy's v1 translation.
@@ -79,6 +81,16 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 072 — MVP target-version compatibility gate
+
+Added a strict release command and CI jobs that run all 48 fixtures against proxy → 0.26.0 and
+proxy → 0.34.1 with an empty pending list; non-empty pending and any diff now fail before release.
+Pass-through integration and the Docker gate run for both versions. A dependency-free Python v1
+client exercises firing/resolved alerts, filters, silence suppression/gossip, status/versionInfo and
+receivers; focused integration checks cover the real versionInfo policy and millisecond timestamp
+truncation. Actual estate client versions, the oldest sender and production auth/path/manifests were
+re-scoped by the operator into 074.
 
 ### 070 — `status` + `receivers`
 

@@ -4,7 +4,7 @@
   "request": {
     "method": "POST",
     "path": "/api/v1/alerts",
-    "body": "[\n  {\"labels\":{\"alertname\":\"DiskFull\",\"team\":\"db\",\"cluster\":\"c1\",\"severity\":\"critical\"},\n   \"annotations\":{\"summary\":\"disk almost full\"},\"generatorURL\":\"http://prometheus/graph?g0\"},\n  {\"labels\":{\"alertname\":\"SlowQueries\",\"team\":\"db\",\"cluster\":\"c1\",\"severity\":\"warning\"}},\n  {\"labels\":{\"alertname\":\"HighLatency\",\"team\":\"web\",\"severity\":\"warning\"},\n   \"startsAt\":\"2026-10-29T12:32:58.921Z\",\"endsAt\":\"2026-10-29T13:42:58.921Z\"},\n  {\"labels\":{\"alertname\":\"Orphan\"}},\n  {\"labels\":{\"alertname\":\"AlreadyResolved\",\"team\":\"web\"},\n   \"startsAt\":\"2026-10-29T11:42:58.921Z\",\"endsAt\":\"2026-10-29T12:32:58.921Z\"}\n]\n"
+    "body": "[\n  {\"labels\":{\"alertname\":\"DiskFull\",\"team\":\"db\",\"cluster\":\"c1\",\"severity\":\"critical\"},\n   \"annotations\":{\"summary\":\"disk almost full\"},\"generatorURL\":\"http://prometheus/graph?g0\"},\n  {\"labels\":{\"alertname\":\"SlowQueries\",\"team\":\"db\",\"cluster\":\"c1\",\"severity\":\"warning\"}},\n  {\"labels\":{\"alertname\":\"HighLatency\",\"team\":\"web\",\"severity\":\"warning\"},\n   \"startsAt\":\"2026-10-29T14:09:50.648Z\",\"endsAt\":\"2026-10-29T15:19:50.648Z\"},\n  {\"labels\":{\"alertname\":\"Orphan\"}},\n  {\"labels\":{\"alertname\":\"AlreadyResolved\",\"team\":\"web\"},\n   \"startsAt\":\"2026-10-29T13:19:50.648Z\",\"endsAt\":\"2026-10-29T14:09:50.648Z\"}\n]\n"
   },
   "response": {
     "status": 200,

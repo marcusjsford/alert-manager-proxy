@@ -4,7 +4,7 @@
   "request": {
     "method": "POST",
     "path": "/api/v1/silences",
-    "body": "{\"id\":\"362e5ffc-c147-4e9b-840d-07237fd5fdb3\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false}],\"startsAt\":\"2026-10-29T12:43:08.576870545Z\",\"endsAt\":\"2026-10-29T15:42:58.921Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance extended\"}"
+    "body": "{\"id\":\"d99271cc-b253-4f6f-9c2e-fab6f40b8054\",\"matchers\":[{\"name\":\"alertname\",\"value\":\"HighLatency\",\"isRegex\":false}],\"startsAt\":\"2026-10-29T14:20:00.326513927Z\",\"endsAt\":\"2026-10-29T17:19:50.648Z\",\"createdBy\":\"alice\",\"comment\":\"maintenance extended\"}"
   },
   "response": {
     "status": 200,
@@ -16,6 +16,6 @@
       "Cache-Control": "no-cache, no-store, must-revalidate",
       "Content-Type": "application/json"
     },
-    "body": "{\"status\":\"success\",\"data\":{\"silenceId\":\"362e5ffc-c147-4e9b-840d-07237fd5fdb3\"}}"
+    "body": "{\"status\":\"success\",\"data\":{\"silenceId\":\"d99271cc-b253-4f6f-9c2e-fab6f40b8054\"}}"
   }
 }

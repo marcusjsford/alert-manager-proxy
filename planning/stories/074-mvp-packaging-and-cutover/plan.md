@@ -15,6 +15,9 @@ without waiting for the post-MVP observability programme.
 - Separate proxy and upstream health checks, resource limits, restart policy, basic error/latency
   self-alerting and telemetry queries using 030. Demonstrate telemetry-backend failure does not
   interrupt delivery. Full dashboards and automated partial-fanout detection are not prerequisites.
+- Close 025's remaining estate inventory: obtain actual client versions (including the oldest
+  sender), production auth/TLS/path/manifest details, and run the representative/full client corpus
+  end-to-end against the deployed topology.
 - Rehearse a three-instance destination: verify proxy compatibility with 0.26 and 0.34.1, move the
   inventory's clients through proxies to the target set, soak, and verify fanout and notification/
   silence behaviour. Confirm parallel replacement versus rolling upgrade with the operator first;

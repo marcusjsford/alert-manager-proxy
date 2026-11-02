@@ -57,6 +57,12 @@ steps:
     method: GET
     path: /api/v2/alerts
     wait_for: {contains: 'DiskFull', not_contains: '"unprocessed"'}
+  # v2 GET recomputes inhibition; settle it before the first v1 alert read.
+  - name: setup-inhibition-applied
+    endpoint: setup
+    method: GET
+    path: '/api/v2/alerts?filter=alertname%3D%22SlowQueries%22'
+    wait_for: {contains: '"suppressed"'}
 
   # ── GET /api/v1/alerts ──────────────────────────────────────────────────
   - {name: alerts-get-all, endpoint: GET /api/v1/alerts, method: GET, path: /api/v1/alerts}

@@ -7,12 +7,14 @@ package integration
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -136,14 +138,49 @@ func TestPassThroughMatchesDirect(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/status is translated by the proxy", func(t *testing.T) {
+		version := upstreamVersion(t, direct)
 		d := do(t, direct, http.MethodGet, "/api/v1/status", "")
 		p := do(t, proxied, http.MethodGet, "/api/v1/status", "")
-		if d.status != http.StatusGone {
-			t.Errorf("upstream answered v1 with %d; expected 410 from a v1-less Alertmanager", d.status)
+		if strings.HasPrefix(version, "0.26.") {
+			if d.status != http.StatusOK {
+				t.Errorf("0.26 upstream native v1 status = %d, want 200", d.status)
+			}
+		} else if d.status != http.StatusGone {
+			t.Errorf("upstream %s answered v1 with %d; expected 410 from a v1-less Alertmanager", version, d.status)
 		}
 		if p.status != http.StatusOK || !bytes.Contains(p.body, []byte(`"status":"success"`)) ||
 			!bytes.Contains(p.body, []byte(`"configYAML"`)) || !bytes.Contains(p.body, []byte(`"configJSON"`)) {
 			t.Errorf("proxy v1 status = %d %s", p.status, p.body)
 		}
 	})
+
+	t.Run("GET /api/v1/status reports upstream versionInfo", func(t *testing.T) {
+		version := upstreamVersion(t, direct)
+		p := do(t, proxied, http.MethodGet, "/api/v1/status", "")
+		var body struct {
+			Data struct {
+				VersionInfo map[string]string `json:"versionInfo"`
+			} `json:"data"`
+		}
+		if p.status != http.StatusOK || json.Unmarshal(p.body, &body) != nil {
+			t.Fatalf("proxy v1 status = %d %s", p.status, p.body)
+		}
+		if got := body.Data.VersionInfo["version"]; got != version {
+			t.Fatalf("v1 versionInfo.version = %q, want upstream %q", got, version)
+		}
+	})
+}
+
+func upstreamVersion(t *testing.T, direct target) string {
+	t.Helper()
+	got := do(t, direct, http.MethodGet, "/api/v2/status", "")
+	var body struct {
+		VersionInfo struct {
+			Version string `json:"version"`
+		} `json:"versionInfo"`
+	}
+	if got.status != http.StatusOK || json.Unmarshal(got.body, &body) != nil || body.VersionInfo.Version == "" {
+		t.Fatalf("upstream v2 status = %d %s", got.status, got.body)
+	}
+	return body.VersionInfo.Version
 }
