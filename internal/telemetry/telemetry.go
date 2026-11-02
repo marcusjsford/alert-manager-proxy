@@ -37,6 +37,7 @@ type Runtime struct {
 	upstream metric.Float64Histogram
 	lossy    metric.Int64Counter
 	alerts   metric.Int64Counter
+	skipped  metric.Int64Counter
 }
 
 // New configures lazy exporters; a collector connection is not a startup gate.
@@ -104,6 +105,8 @@ func New(ctx context.Context, cfg config.Config, version string, output io.Write
 	r.lossy, err = meter.Int64Counter("am_proxy_translation_lossy_total")
 	errs = append(errs, err)
 	r.alerts, err = meter.Int64Counter("am_proxy_alerts_received_total")
+	errs = append(errs, err)
+	r.skipped, err = meter.Int64Counter("am_proxy_inspection_skipped_total")
 	errs = append(errs, err)
 	if err := errors.Join(errs...); err != nil {
 		return nil, errors.Join(err, r.Shutdown(ctx))

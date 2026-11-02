@@ -3,7 +3,7 @@
 - [ ] Versioned Kubernetes artefacts match 025's manifests and retain one proxy per Alertmanager and
       the required client fanout; health checks distinguish proxy/upstream failures.
 - [ ] Restart/resource settings are exercised; killing a proxy produces its self-alert and restart;
-      basic request/error/latency/client queries work and collector failure does not block delivery.
+      100 dashboards and 080 fanout views work, and collector failure does not block delivery.
 - [ ] Strict 072 gate is green for 0.26.0 and 0.34.1; three-instance target rehearsal includes real client
       traffic, firing/resolved notifications, silence gossip/suppression and verified alert fanout.
 - [ ] Actual estate client versions (including the oldest sender), production auth/TLS/path and

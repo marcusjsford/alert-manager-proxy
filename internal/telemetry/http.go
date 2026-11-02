@@ -251,6 +251,15 @@ func (r *Runtime) Parameters(ctx context.Context, attrs ...attribute.KeyValue) {
 	}
 }
 
+// ParametersOn adds redacted detail to an explicit span, used by response
+// inspection when the active context span is the upstream client span.
+func (r *Runtime) ParametersOn(_ context.Context, span trace.Span, attrs ...attribute.KeyValue) {
+	if !r.Enabled || span == nil {
+		return
+	}
+	span.SetAttributes(r.redactor.attributes(attrs)...)
+}
+
 // SpanParameters adds redacted detail to the request span only, not to the
 // access log or metric labels. Use it for bounded request content such as
 // alertnames that would make logs noisy.
@@ -259,6 +268,17 @@ func (r *Runtime) SpanParameters(ctx context.Context, attrs ...attribute.KeyValu
 		return
 	}
 	trace.SpanFromContext(ctx).SetAttributes(r.redactor.attributes(attrs)...)
+}
+
+// InspectionSkipped records a v2 body that could not be inspected. The
+// reason is span-only; the counter uses the bounded request labels.
+func (r *Runtime) InspectionSkipped(ctx context.Context, reason string) {
+	if !r.Enabled {
+		return
+	}
+	trace.SpanFromContext(ctx).AddEvent("am.inspection.skipped", trace.WithAttributes(
+		attribute.String("reason", reason)))
+	r.skipped.Add(ctx, 1, metric.WithAttributes(r.labels(state(ctx))...))
 }
 
 // Lossy reports an explicit translation decision; field/reason are span-only.

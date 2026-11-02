@@ -1,12 +1,12 @@
 # 074 — MVP packaging, operations + cutover
 
-**Depends on:** 072 · **Status:** Not started
+**Depends on:** 072, 075, 080, 090, 100, 105 · **Status:** Not started
 
 ## Goal
 
 Release v1 compatibility in the confirmed three-instance Kubernetes topology and move clients from
 0.26.0 to the operator-selected 0.34.1 target reversibly,
-without waiting for the post-MVP observability programme.
+after the feature-complete observability, detection and replication work.
 
 ## Scope
 
@@ -14,7 +14,8 @@ without waiting for the post-MVP observability programme.
   fanout preserved, pinned/versioned image, configuration example, ports/auth/TLS arrangements.
 - Separate proxy and upstream health checks, resource limits, restart policy, basic error/latency
   self-alerting and telemetry queries using 030. Demonstrate telemetry-backend failure does not
-  interrupt delivery. Full dashboards and automated partial-fanout detection are not prerequisites.
+  interrupt delivery. Use 100 dashboards and 080 fanout views; 090 replication is implemented and
+  configurable, with production enablement remaining evidence-based.
 - Close 025's remaining estate inventory: obtain actual client versions (including the oldest
   sender), production auth/TLS/path/manifest details, and run the representative/full client corpus
   end-to-end against the deployed topology.
