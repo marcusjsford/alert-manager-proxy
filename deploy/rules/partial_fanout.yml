@@ -1,0 +1,27 @@
+# Prometheus-style rule for partial client fanout.
+#
+# The SQL exporter is expected to expose:
+#   am_proxy_client_instances_reached{environment,client,client_address}
+#   am_proxy_client_instances_expected{environment}
+# from deploy/queries/partial_fanout.sql (known clients and unknown addresses).
+# `up{job="alertmanager-proxy"}` is the per-proxy scrape health series; the
+# rule suppresses while any expected proxy instance is down.
+groups:
+  - name: alertmanager-proxy-partial-fanout
+    rules:
+      - alert: AlertmanagerProxyPartialFanout
+        expr: |
+          (am_proxy_client_instances_reached
+            < on(environment) group_left am_proxy_client_instances_expected)
+          and on(environment) (min by (environment) (up{job="alertmanager-proxy"}) == 1)
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Client {{ $labels.client }} posts alerts to fewer than all Alertmanagers"
+          description: >-
+            Client {{ $labels.client }} (address {{ $labels.client_address }})
+            reached {{ $value }} Alertmanager instances, below the expected
+            count for {{ $labels.environment }}. A proxy health failure suppresses
+            this rule. Alertmanager does not gossip alerts, so this client loses
+            alerts during a node failure.

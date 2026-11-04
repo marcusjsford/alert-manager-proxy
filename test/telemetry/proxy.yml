@@ -15,6 +15,12 @@ clients:
       user_agent: '^AmpSmoke/'
     - name: lab-benchmark
       user_agent: '^AmpBench/'
+    - name: fanout-full
+      user_agent: '^FanoutFull/'
+    - name: fanout-two
+      user_agent: '^FanoutTwo/'
+    - name: fanout-one
+      user_agent: '^FanoutOne/'
     - name: dashboard
       basic_auth_user: grafana
     - name: script

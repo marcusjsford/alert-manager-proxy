@@ -6,6 +6,8 @@
       100 dashboards and 080 fanout views work, and collector failure does not block delivery.
 - [ ] Strict 072 gate is green for 0.26.0 and 0.34.1; three-instance target rehearsal includes real client
       traffic, firing/resolved notifications, silence gossip/suppression and verified alert fanout.
+- [ ] 080's partial-fanout query/rule runs against production telemetry and the real partial clients
+      are recorded with the date; synthetic-lab results alone are insufficient.
 - [ ] Actual estate client versions (including the oldest sender), production auth/TLS/path and
       manifest requirements are recorded, and every required client class is run end-to-end with
       reproducible results. Representative-lab evidence alone does not satisfy this criterion.

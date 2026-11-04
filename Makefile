@@ -9,13 +9,14 @@ COMPOSE = docker compose -f test/integration/docker-compose.yml -p amp-integrati
 CONTRACT_COMPOSE = docker compose -f test/contract/docker-compose.yml -p amp-contract
 LAB_COMPOSE = docker compose -f test/lab/docker-compose.yml -p amp-lab
 TELEMETRY_COMPOSE = docker compose -f test/telemetry/docker-compose.yml -p amp-telemetry
+FANOUT_COMPOSE = docker compose -f test/fanout/docker-compose.yml -p amp-fanout
 CONTRACT = go run ./test/contract/cmd/contract
 FIXTURES = test/contract/fixtures/v0.26.0
 PENDING ?= test/contract/pending.txt
 CONTRACT_FLAGS ?=
 V1_CLIENT_ARGS ?= --url http://127.0.0.1:19391 --url http://127.0.0.1:19392 --url http://127.0.0.1:19393 --receiver http://127.0.0.1:19280
 
-.PHONY: build test lint integration integration-v026 contract strict-contract release-check contract-record contract-determinism v1-client-check v1-client-syntax lab lab-check lab-down telemetry telemetry-check telemetry-down docker ci clean
+.PHONY: build test lint integration integration-v026 contract strict-contract release-check contract-record contract-determinism v1-client-check v1-client-syntax lab lab-check lab-down telemetry telemetry-check telemetry-down fanout fanout-check fanout-down docker ci clean
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/alertmanager-proxy ./cmd/alertmanager-proxy
@@ -95,6 +96,16 @@ telemetry-check:
 
 telemetry-down:
 	$(TELEMETRY_COMPOSE) down -v
+
+# Three-AM/three-proxy partial-fanout detection stack (separate from amp-lab).
+fanout:
+	$(FANOUT_COMPOSE) up -d --build --wait --wait-timeout 90
+
+fanout-check:
+	go test -race -tags fanout -count=1 -timeout=2m -v ./test/fanout/
+
+fanout-down:
+	$(FANOUT_COMPOSE) down -v
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
