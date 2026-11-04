@@ -78,6 +78,9 @@ func (r *Router) recordAlerts(req *http.Request, alerts []*types.Alert) {
 	}
 	ctx := req.Context()
 	r.obs.Alerts(ctx, int64(len(alerts)))
+	firing, resolved := alertBreakdown(alerts)
+	r.obs.Parameters(ctx, attribute.Int64("am.alerts.firing", firing),
+		attribute.Int64("am.alerts.resolved", resolved))
 	if names := alertNames(alerts); len(names) > 0 {
 		r.obs.SpanParameters(ctx, attribute.StringSlice("am.alerts.names", names))
 	}
@@ -172,6 +175,18 @@ func truncate(s string, limit int) string {
 		return s
 	}
 	return string(runes[:limit])
+}
+
+func alertBreakdown(alerts []*types.Alert) (firing, resolved int64) {
+	now := time.Now()
+	for _, alert := range alerts {
+		if !alert.EndsAt.IsZero() && alert.EndsAt.Before(now) {
+			resolved++
+		} else {
+			firing++
+		}
+	}
+	return firing, resolved
 }
 
 func hasSubMillisecondTimes(alerts []*types.Alert) bool {

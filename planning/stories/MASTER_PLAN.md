@@ -39,13 +39,13 @@ Finish an in-progress story before selecting the next eligible row.
 | [060](060-silences/) | Silences | 040 | **Done** | List/get/create/update/delete, matcher translation |
 | [070](070-status-and-receivers/) | `status` + `receivers` | 040 | **Done** | Reshape v2 status into the v1 layout legacy clients parse |
 | [072](072-target-version-compatibility-gate/) | MVP target-version compatibility gate | 015, 025, 050, 060, 070 | **Done** | Strict contract and pass-through gate against 0.26 and 0.34.1; representative-client and failure-path verification |
-| [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover |
-| [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030, 074 | Not started | Post-MVP: same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
+| [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030 | **Done** | Same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
 | [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | Not started | Report clients that post alerts to fewer than all three Alertmanagers |
 | [100](100-alert-path-dashboards/) | Alert-path dashboards | 075, 080 | Not started | Permanent per-client view of the alert path (v1 and v2) + partial fanout; includes the v1-retirement view |
 | [105](105-upstream-release-compatibility/) | Continuous upstream release compatibility | 072, 075 | Not started | Extend the MVP gate to production/latest and automatically test newly discovered releases |
+| [090](090-opt-in-alert-replication/) | Opt-in alert replication | 080, 100 | Not started | Pre-cutover opt-in behaviour: forward alerts to peers for partial clients, with production enablement justified by observed need |
+| [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072, 075, 080, 090, 100, 105 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover after feature completion |
 | [110](110-packaging-and-cutover/) | Permanent operations + v1 retirement | 074, 100, 105 | Not started | Extend MVP operations with dashboard-backed procedures and the tested `v1.enabled` switch-off/rollback |
-| [090](090-opt-in-alert-replication/) | Opt-in alert replication | 080, 110 | Not started | Later opt-in behaviour change: forward alerts to peers for partial clients, justified by observed need |
 | [120](120-rust-port-evaluation/) | Rust port evaluation | 110 | Not started | Port to Rust; keep only if it measurably wins on footprint/latency and passes the identical harness |
 
 ## Compatibility MVP — release boundary at 074
@@ -58,12 +58,12 @@ Finish an in-progress story before selecting the next eligible row.
   current contract exchanges plus estate-specific additions pass with no pending exemptions, and
   the chosen upgrade is rehearsed and deployed with human approval. Unknown clients are an explicit
   evidence gap, not assumed compatible. Preserve client delivery across the three-instance topology.
-- Basic telemetry and operational error/latency visibility are required. Deep v2 inspection,
-  automated fanout detection, full dashboards, scheduled release discovery, v1 retirement, replication
-  and Rust are post-MVP; they do not gate 074.
+- Feature-complete work (v2 inspection, fanout detection, dashboards, scheduled release checks and
+  opt-in replication) precedes 074. 074 is the cutover/release boundary after those features and the
+  production evidence; 110 owns later permanent-operation refinements and v1 retirement. Rust is
+  evaluated after 110.
 - 072 gates the selected upgrade version now; 105 extends that gate to future releases. 074 owns
-  initial packaging, estate client evidence and cutover; 110 owns later permanent-operation refinements
-  and v1 retirement.
+  initial packaging, estate client evidence and cutover after 075/080/090/100/105.
 - Operator confirmed current 0.26.0, target 0.34.1 and three instances on Kubernetes in 025.
   [Client inventory](../client-inventory.md) records remaining client/deployment evidence and the
   distinction between deprecating old direct endpoints and disabling the proxy's v1 translation.
@@ -81,6 +81,15 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 075 — v2 request-level instrumentation
+
+Added bounded, read-only inspection of v2 alert and silence traffic on the pass-through path. Bodies
+are capped at 1 MiB and forwarded byte-identically; response inspection adds the silence ID/matchers
+needed for v1 parity. v1 and v2 calls now expose the same application span attributes, v2 alert posts
+increment the received-alert metric, and oversized/malformed bodies increment the new inspection
+skipped counter. Latency and byte-preservation tests are recorded; 074 was deferred so feature work
+continues before cutover.
 
 ### 072 — MVP target-version compatibility gate
 

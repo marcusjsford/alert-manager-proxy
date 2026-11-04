@@ -20,6 +20,7 @@ type Options struct {
 	ResponseHeaderTimeout time.Duration
 	Logger                *slog.Logger
 	WrapTransport         func(http.RoundTripper) http.RoundTripper
+	ModifyResponse        func(*http.Response) error
 }
 
 // New returns a handler that proxies every request to upstream.
@@ -38,10 +39,12 @@ func New(upstream *url.URL, opts Options) http.Handler {
 
 	return &httputil.ReverseProxy{
 		Rewrite: func(r *httputil.ProxyRequest) {
+			r.Out = r.Out.WithContext(r.In.Context())
 			r.SetURL(upstream)
 			r.SetXForwarded()
 		},
-		Transport: upstreamTransport,
+		Transport:      upstreamTransport,
+		ModifyResponse: opts.ModifyResponse,
 		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
 			status := statusFor(err)
 			logger.WarnContext(r.Context(), "upstream request failed",

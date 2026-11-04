@@ -3,10 +3,12 @@
 package telemetry
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"runtime"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 )
@@ -46,5 +48,46 @@ func TestPassThroughP99Overhead(t *testing.T) {
 	p99off, p99on := disabled[989], enabled[989]
 	t.Logf("samples_per_mode=1000 warmup_per_mode=100 concurrency=1 go=%s os=%s arch=%s cpus=%d", runtime.Version(), runtime.GOOS, runtime.GOARCH, runtime.NumCPU())
 	t.Logf("p99_off_ms=%.3f p99_on_ms=%.3f added_p99_ms=%.3f (full HTTP response, telemetry includes JSON access logs and real asynchronous OTLP export)",
+		float64(p99off)/float64(time.Millisecond), float64(p99on)/float64(time.Millisecond), float64(p99on-p99off)/float64(time.Millisecond))
+}
+
+func TestV2PostAlertsInspectionP99(t *testing.T) {
+	client := &http.Client{Timeout: 3 * time.Second}
+	body := fmt.Sprintf(`[{"labels":{"alertname":"AmpInspectBench","instance":"bench"},"startsAt":%q,"endsAt":%q}]`,
+		time.Now().UTC().Add(time.Hour).Format(time.RFC3339Nano),
+		time.Now().UTC().Add(2*time.Hour).Format(time.RFC3339Nano))
+	measure := func(address string) time.Duration {
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, address+"/api/v2/alerts", strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "AmpBench/1")
+		started := time.Now()
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		if err != nil || resp.StatusCode != http.StatusOK {
+			t.Fatalf("benchmark request failed: %d %v", resp.StatusCode, err)
+		}
+		return time.Since(started)
+	}
+	const off, on = "http://127.0.0.1:19597", "http://127.0.0.1:19595"
+	for range 100 {
+		measure(off)
+		measure(on)
+	}
+	disabled, enabled := make([]time.Duration, 1000), make([]time.Duration, 1000)
+	for i := range disabled {
+		disabled[i], enabled[i] = measure(off), measure(on)
+	}
+	slices.Sort(disabled)
+	slices.Sort(enabled)
+	p99off, p99on := disabled[989], enabled[989]
+	t.Logf("v2_post_alerts samples_per_mode=1000 warmup_per_mode=100 concurrency=1 go=%s os=%s arch=%s cpus=%d", runtime.Version(), runtime.GOOS, runtime.GOARCH, runtime.NumCPU())
+	t.Logf("v2_post_alerts p99_off_ms=%.3f p99_on_ms=%.3f added_p99_ms=%.3f (full HTTP response; inspection parses the capped body and records spans/metrics/logs)",
 		float64(p99off)/float64(time.Millisecond), float64(p99on)/float64(time.Millisecond), float64(p99on-p99off)/float64(time.Millisecond))
 }

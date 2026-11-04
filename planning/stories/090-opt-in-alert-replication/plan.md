@@ -1,6 +1,6 @@
 # 090 — Opt-in alert replication
 
-**Depends on:** 080, 110 · **Status:** Not started
+**Depends on:** 080, 100 · **Status:** Not started
 
 ## Goal
 
@@ -11,8 +11,8 @@ still get HA, without touching the clients.
 
 - Config: peer Alertmanager URLs (direct, **never peer proxies** — no loops); mode
   `off` (default) | `clients: [names]` | `all`.
-- Post-MVP opt-in behaviour change, prioritised after permanent-operation/retirement readiness.
-  Use 080/100 evidence to record the actual client need before enabling replication.
+- Pre-cutover opt-in behaviour change; implement and test it before 074, but enable it in
+  production only after 080/100 evidence records the actual client need.
 - Replicate after the local upstream responds; local result determines the client's response.
   Peer writes are async with bounded queue, timeout, and drop-on-full (counted), so a slow peer can't
   back-pressure clients.

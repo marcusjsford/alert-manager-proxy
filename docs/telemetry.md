@@ -99,6 +99,7 @@ endpoint takes precedence over SDK endpoint environment defaults.
 | `am_proxy_upstream_duration_seconds` | Upstream operation through response-body completion/close |
 | `am_proxy_translation_lossy_total` | Explicit translation decisions reported by the helper |
 | `am_proxy_alerts_received_total` | Parsed received alert counts reported by endpoint/inspection code |
+| `am_proxy_inspection_skipped_total` | v2 bodies not inspected because they exceeded the cap or failed to parse; bytes are still forwarded |
 
 `status_code=0` means no HTTP response was observed (e.g. a transport failure or pre-response
 abort). Aborted requests still produce correlated logs and error spans without changing the
@@ -114,7 +115,9 @@ one deadline between HTTP draining and all three concurrently shutting-down prov
 
 `Runtime.Parameters(ctx, attrs...)` attaches redacted details to the request span and access log,
 never labels. `Runtime.SpanParameters(ctx, attrs...)` attaches redacted detail to the span only, for
-bounded request content that would make logs noisy. `Runtime.Lossy(ctx, field, reason)` adds
+bounded request content that would make logs noisy. `Runtime.ParametersOn(ctx, span, attrs...)` is
+for response inspection, which runs under the upstream client span but must annotate the inbound
+server span. `Runtime.Lossy(ctx, field, reason)` adds
 `am.translation.lossy` and increments the lossy counter; field/reason are span-only.
 `Runtime.Alerts(ctx, count)` adds `am.alerts.count` and increments the received-alert counter.
 `POST /api/v1/alerts` also attaches the deduplicated, bounded `am.alerts.names` list to the span
@@ -125,8 +128,9 @@ removes when enabled. List/get record the `silence.timestamps` lossy event for v
 precision. Field/reason names should describe the implementation's
 translation decision, not embed arbitrary request content.
 
-030 does not inspect v2 JSON payloads or implement v1 translation. 040–070 and 075 call these helpers
-as their endpoint work lands. The alert/lossy counters have no observations until called.
+030 provides the base helpers. v1 translation in 040–070 and v2 request/response inspection in 075
+call them; 075 also caps inspected v2 bodies at 1 MiB, forwards the original bytes unchanged and
+increments `am_proxy_inspection_skipped_total` when inspection is impossible.
 
 ## Real development pipeline
 
