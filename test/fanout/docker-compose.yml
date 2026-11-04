@@ -1,0 +1,86 @@
+# Isolated three-AM/three-proxy stack for partial-fanout detection checks.
+# Loopback-only host ports; no production access.
+x-alertmanager: &alertmanager
+  image: prom/alertmanager:v0.34.1
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O-", "http://localhost:9093/-/ready"]
+    interval: 1s
+    timeout: 2s
+    retries: 60
+
+x-proxy-env: &proxy-env
+  AMP_TELEMETRY_ENABLED: "true"
+  AMP_ENVIRONMENT: fanout-test
+  AMP_OTLP_PROTOCOL: grpc
+  AMP_OTLP_ENDPOINT: http://collector:4317
+
+x-proxy: &proxy
+  build: ../..
+  image: alertmanager-proxy:fanout
+  command: ["-config", "/etc/amp/proxy.yml"]
+  volumes: ["../telemetry/proxy.yml:/etc/amp/proxy.yml:ro"]
+  depends_on:
+    collector: {condition: service_started}
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.5-alpine
+    environment:
+      CLICKHOUSE_DB: otel
+      CLICKHOUSE_USER: amp
+      CLICKHOUSE_PASSWORD: amp-lab-only
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    ports: ["127.0.0.1:19623:8123"]
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user", "amp", "--password", "amp-lab-only", "--query", "SELECT 1"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.145.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes: ["../telemetry/collector.yml:/etc/otelcol-contrib/config.yaml:ro"]
+    depends_on:
+      clickhouse: {condition: service_healthy}
+
+  am-1:
+    <<: *alertmanager
+  am-2:
+    <<: *alertmanager
+  am-3:
+    <<: *alertmanager
+
+  proxy-1:
+    <<: *proxy
+    environment:
+      <<: *proxy-env
+      AMP_UPSTREAM_URL: http://am-1:9093
+      AMP_SERVICE_INSTANCE_ID: fanout-am-1
+    ports: ["127.0.0.1:19691:9095"]
+    depends_on:
+      am-1: {condition: service_healthy}
+      collector: {condition: service_started}
+
+  proxy-2:
+    <<: *proxy
+    environment:
+      <<: *proxy-env
+      AMP_UPSTREAM_URL: http://am-2:9093
+      AMP_SERVICE_INSTANCE_ID: fanout-am-2
+    ports: ["127.0.0.1:19692:9095"]
+    depends_on:
+      am-2: {condition: service_healthy}
+      collector: {condition: service_started}
+
+  proxy-3:
+    <<: *proxy
+    environment:
+      <<: *proxy-env
+      AMP_UPSTREAM_URL: http://am-3:9093
+      AMP_SERVICE_INSTANCE_ID: fanout-am-3
+    ports: ["127.0.0.1:19693:9095"]
+    depends_on:
+      am-3: {condition: service_healthy}
+      collector: {condition: service_started}

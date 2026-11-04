@@ -1,6 +1,6 @@
 # 080 — Partial-fanout detection
 
-**Depends on:** 040, 075 · **Status:** Not started
+**Depends on:** 040, 075 · **Status:** Done
 
 ## Goal
 
