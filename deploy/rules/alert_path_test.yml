@@ -1,0 +1,61 @@
+rule_files:
+  - alert_path.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'am_proxy_client_last_seen_age_seconds{environment="test",client="fast"}'
+        values: '300+0x10'
+      - series: 'am_proxy_client_expected_interval_seconds{environment="test",client="fast"}'
+        values: '60+0x10'
+      - series: 'am_proxy_client_last_seen_age_seconds{environment="test",client="slow"}'
+        values: '300+0x10'
+      - series: 'am_proxy_client_expected_interval_seconds{environment="test",client="slow"}'
+        values: '600+0x10'
+      - series: 'up{environment="test",job="alertmanager-proxy",instance="p1"}'
+        values: '1+0x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: AlertmanagerProxyClientSilent
+        exp_alerts:
+          - exp_labels:
+              environment: test
+              client: fast
+              severity: warning
+            exp_annotations:
+              summary: "Client stopped posting alerts"
+              description: "Client fast in test has not posted within twice its expected interval."
+
+  - interval: 1m
+    input_series:
+      - series: 'am_proxy_unknown_client_first_seen_age_seconds{environment="test",client_address="192.0.2.10"}'
+        values: '60+0x10'
+      - series: 'am_proxy_unknown_client_first_seen_age_seconds{environment="test",client_address="192.0.2.11"}'
+        values: '600+0x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: AlertmanagerProxyUnknownClient
+        exp_alerts:
+          - exp_labels:
+              environment: test
+              client_address: 192.0.2.10
+              severity: info
+            exp_annotations:
+              summary: "New unknown Alertmanager client"
+              description: "Unknown client at 192.0.2.10 (test) first appeared recently."
+
+  - interval: 1m
+    input_series:
+      - series: 'am_proxy_v1_client_first_seen_age_seconds{environment="test",client="legacy"}'
+        values: '60+0x10'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: AlertmanagerProxyNewV1Client
+        exp_alerts:
+          - exp_labels:
+              environment: test
+              client: legacy
+              severity: info
+            exp_annotations:
+              summary: "New v1 Alertmanager client"
+              description: "Client legacy (test) first used v1 recently."

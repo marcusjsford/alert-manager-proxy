@@ -41,7 +41,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [072](072-target-version-compatibility-gate/) | MVP target-version compatibility gate | 015, 025, 050, 060, 070 | **Done** | Strict contract and pass-through gate against 0.26 and 0.34.1; representative-client and failure-path verification |
 | [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030 | **Done** | Same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
 | [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | **Done** | Report clients that post alerts to fewer than all three Alertmanagers |
-| [100](100-alert-path-dashboards/) | Alert-path dashboards | 075, 080 | Not started | Permanent per-client view of the alert path (v1 and v2) + partial fanout; includes the v1-retirement view |
+| [100](100-alert-path-dashboards/) | Alert-path dashboards | 075, 080 | **Done** | Permanent per-client view of the alert path (v1 and v2) + partial fanout; includes the v1-retirement view |
 | [105](105-upstream-release-compatibility/) | Continuous upstream release compatibility | 072, 075 | Not started | Extend the MVP gate to production/latest and automatically test newly discovered releases |
 | [090](090-opt-in-alert-replication/) | Opt-in alert replication | 080, 100 | Not started | Pre-cutover opt-in behaviour: forward alerts to peers for partial clients, with production enablement justified by observed need |
 | [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072, 075, 080, 090, 100, 105 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover after feature completion |
@@ -81,6 +81,15 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 100 — Alert-path dashboards
+
+Added the committed Grafana ClickHouse dashboard covering client alert volume/firing-resolved split,
+alertnames, last seen, error rate, silence operations/lifetime, 080 fanout, proxy latency/errors/
+lossy/skipped inspection and the v1-retirement last-seen view. All 12 panel queries return real rows;
+the v1 request total matches a one-day raw-span count. Added exporter-contract rules for a silent
+client (2× per-client expected interval), new unknown clients and new v1 clients, with passing
+`promtool` tests and a Grafana import/query check.
 
 ### 080 — Partial-fanout detection
 

@@ -1,0 +1,452 @@
+{
+  "uid": "amp-alert-path",
+  "title": "Alertmanager Proxy \u2014 Alert Path",
+  "tags": [
+    "alertmanager-proxy"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "environment",
+        "label": "Environment",
+        "type": "textbox",
+        "query": "production",
+        "current": {
+          "text": "production",
+          "value": "production"
+        },
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Alert posts by client",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  toStartOfInterval(Timestamp, INTERVAL 5 MINUTE) AS time,\n  SpanAttributes['client.name'] AS client,\n  SpanAttributes['am.api.version'] AS api_version,\n  count() AS posts\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\n  AND SpanAttributes['http.route'] IN ('/api/v1/alerts', '/api/v2/alerts')\n  AND SpanAttributes['http.request.method'] = 'POST'\nGROUP BY time, client, api_version\nORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Firing vs resolved alerts",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  toStartOfInterval(Timestamp, INTERVAL 5 MINUTE) AS time,\n  SpanAttributes['client.name'] AS client,\n  sum(toInt64OrZero(SpanAttributes['am.alerts.firing'])) AS firing,\n  sum(toInt64OrZero(SpanAttributes['am.alerts.resolved'])) AS resolved\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\n  AND SpanAttributes['http.route'] IN ('/api/v1/alerts', '/api/v2/alerts')\n  AND SpanAttributes['http.request.method'] = 'POST'\nGROUP BY time, client\nORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Top alertnames",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  SpanAttributes['client.name'] AS client,\n  replaceAll(arrayJoin(JSONExtractArrayRaw(SpanAttributes['am.alerts.names'])), '\"', '') AS alertname,\n  count() AS posts\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\n  AND SpanAttributes['http.route'] IN ('/api/v1/alerts', '/api/v2/alerts')\n  AND SpanAttributes['http.request.method'] = 'POST'\n  AND SpanAttributes['am.alerts.names'] != ''\nGROUP BY client, alertname\nORDER BY posts DESC\nLIMIT 50"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Last seen by client",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  SpanAttributes['client.name'] AS client,\n  SpanAttributes['am.api.version'] AS api_version,\n  max(Timestamp) AS last_seen,\n  count() AS posts\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\n  AND SpanAttributes['http.route'] IN ('/api/v1/alerts', '/api/v2/alerts')\n  AND SpanAttributes['http.request.method'] = 'POST'\nGROUP BY client, api_version\nORDER BY last_seen DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Client alert error rate",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  SpanAttributes['client.name'] AS client,\n  countIf(toUInt16OrZero(SpanAttributes['http.response.status_code']) >= 400) AS errors,\n  count() AS requests,\n  errors / requests AS error_rate\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\n  AND SpanAttributes['http.route'] IN ('/api/v1/alerts', '/api/v2/alerts')\n  AND SpanAttributes['http.request.method'] = 'POST'\nGROUP BY client\nORDER BY error_rate DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Silence operations",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  Timestamp,\n  SpanAttributes['client.name'] AS client,\n  SpanAttributes['am.silence.operation'] AS operation,\n  SpanAttributes['am.silence.id'] AS silence_id,\n  SpanAttributes['am.silence.matchers'] AS matchers,\n  SpanAttributes['am.silence.createdBy'] AS created_by\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\n  AND SpanAttributes['http.route'] IN ('/api/v1/silences', '/api/v2/silences', '/api/v1/silence/{id}', '/api/v2/silence/{id}')\n  AND SpanAttributes['am.silence.operation'] != ''\nORDER BY Timestamp DESC\nLIMIT 200"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Silence observed lifetime (create \u2192 delete)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  silence_id,\n  any(client) AS client,\n  any(matchers) AS matchers,\n  any(created_by) AS created_by,\n  minIf(Timestamp, operation = 'create') AS created_at,\n  maxIf(Timestamp, operation = 'delete') AS deleted_at,\n  dateDiff('second', created_at, deleted_at) AS observed_lifetime_seconds\nFROM (\n  SELECT Timestamp,\n         SpanAttributes['client.name'] AS client,\n         SpanAttributes['am.silence.operation'] AS operation,\n         SpanAttributes['am.silence.id'] AS silence_id,\n         SpanAttributes['am.silence.matchers'] AS matchers,\n         SpanAttributes['am.silence.createdBy'] AS created_by\n  FROM otel.otel_traces\n  WHERE ServiceName = 'alertmanager-proxy'\n    AND SpanKind = 'Server'\n    AND ResourceAttributes['deployment.environment.name'] = '$environment'\n    AND $__timeFilter(Timestamp)\n    AND SpanAttributes['http.route'] IN ('/api/v1/silences', '/api/v2/silences', '/api/v1/silence/{id}', '/api/v2/silence/{id}')\n)\nWHERE operation IN ('create', 'delete') AND silence_id != ''\nGROUP BY silence_id\nORDER BY created_at DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Partial fanout (080)",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "-- Partial-fanout detection over the development/production OTel ClickHouse\n-- pipeline. A window of 10m is deliberately much larger than normal\n-- Prometheus evaluation/resend intervals; adjust it if estate intervals are\n-- longer (the rule's `for` duration must cover at least two client intervals).\n--\n-- The expected peer count is configured per environment here. Keep this in\n-- sync with the value exported as am_proxy_client_instances_expected for the\n-- Prometheus rule (see deploy/rules/partial_fanout.yml).\n--\n-- Known clients come from the alert counter emitted by 040/075. Unknown clients\n-- are split by client.address from server spans because their metric label is\n-- the single bounded value \"unknown\". Coverage requires every expected proxy\n-- instance to be reporting request telemetry; while a proxy is down the query\n-- returns no partial-fanout rows, so the false positive is bounded by the\n-- window and suppressed rather than blaming correctly-fanned-out clients.\nWITH\n    now() - INTERVAL 10 MINUTE AS window_start,\n    expected AS (\n        SELECT '$environment' AS environment, 3 AS expected\n    ),\n    coverage AS (\n        SELECT\n            ResourceAttributes['deployment.environment.name'] AS environment,\n            uniqExact(ResourceAttributes['service.instance.id']) AS observed_instances\n        FROM otel.otel_metrics_sum\n        WHERE MetricName = 'am_proxy_requests_total'\n          AND TimeUnix >= window_start\n        GROUP BY environment\n    ),\n    known AS (\n        SELECT\n            ResourceAttributes['deployment.environment.name'] AS environment,\n            Attributes['client'] AS client,\n            '' AS client_address,\n            uniqExact(ResourceAttributes['service.instance.id']) AS instances_reached\n        FROM otel.otel_metrics_sum\n        WHERE MetricName = 'am_proxy_alerts_received_total'\n          AND TimeUnix >= window_start\n          AND Attributes['endpoint'] IN ('/api/v1/alerts', '/api/v2/alerts')\n          AND Attributes['method'] = 'POST'\n          AND Attributes['client'] != 'unknown'\n        GROUP BY environment, client\n    ),\n    unknown AS (\n        SELECT\n            ResourceAttributes['deployment.environment.name'] AS environment,\n            'unknown' AS client,\n            SpanAttributes['client.address'] AS client_address,\n            uniqExact(ResourceAttributes['service.instance.id']) AS instances_reached\n        FROM otel.otel_traces\n        WHERE ServiceName = 'alertmanager-proxy'\n          AND SpanKind = 'Server'\n          AND Timestamp >= window_start\n          AND SpanAttributes['http.route'] IN ('/api/v1/alerts', '/api/v2/alerts')\n          AND SpanAttributes['http.request.method'] = 'POST'\n          AND SpanAttributes['client.name'] = 'unknown'\n          AND SpanAttributes['client.address'] != ''\n        GROUP BY environment, client_address\n    )\nSELECT\n    partial.environment,\n    partial.client,\n    partial.client_address,\n    partial.instances_reached,\n    expected.expected,\n    coverage.observed_instances\nFROM (\n    SELECT * FROM known\n    UNION ALL\n    SELECT * FROM unknown\n) AS partial\nINNER JOIN expected USING environment\nINNER JOIN coverage USING environment\nWHERE partial.instances_reached < expected.expected\n  AND coverage.observed_instances = expected.expected\nORDER BY partial.client, partial.client_address"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Proxy latency: server vs upstream p99",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 42
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  toStartOfInterval(Timestamp, INTERVAL 5 MINUTE) AS time,\n  ResourceAttributes['service.instance.id'] AS instance,\n  SpanKind,\n  quantile(0.99)(Duration) / 1e9 AS p99_seconds\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind IN ('Server', 'Client')\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\nGROUP BY time, instance, SpanKind\nORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Proxy errors and lossy translations",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 42
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  toStartOfInterval(Timestamp, INTERVAL 5 MINUTE) AS time,\n  ResourceAttributes['service.instance.id'] AS instance,\n  countIf(toUInt16OrZero(SpanAttributes['http.response.status_code']) >= 400) AS errors,\n  count() AS requests,\n  errors / requests AS error_rate,\n  countIf(arrayCount(x -> x = 'am.translation.lossy', Events.Name) > 0) AS lossy_requests\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\nGROUP BY time, instance\nORDER BY time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Inspection skipped by instance",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 50
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  ResourceAttributes['service.instance.id'] AS instance,\n  max(Value) AS skipped\nFROM otel.otel_metrics_sum\nWHERE ServiceName = 'alertmanager-proxy'\n  AND MetricName = 'am_proxy_inspection_skipped_total'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(TimeUnix)\nGROUP BY instance\nORDER BY skipped DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Last seen v1 per client / endpoint / filter",
+      "description": "",
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "clickhouse"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 50
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "clickhouse"
+          },
+          "queryType": "sql",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": 1,
+          "rawSql": "SELECT\n  SpanAttributes['client.name'] AS client,\n  SpanAttributes['http.route'] AS endpoint,\n  SpanAttributes['am.v1.filter'] AS filter,\n  max(Timestamp) AS last_seen,\n  count() AS requests\nFROM otel.otel_traces\nWHERE ServiceName = 'alertmanager-proxy'\n  AND SpanKind = 'Server'\n  AND ResourceAttributes['deployment.environment.name'] = '$environment'\n  AND $__timeFilter(Timestamp)\n  AND SpanAttributes['am.api.version'] = 'v1'\nGROUP BY client, endpoint, filter\nORDER BY last_seen DESC"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    }
+  ]
+}

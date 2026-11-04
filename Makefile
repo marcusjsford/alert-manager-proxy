@@ -16,7 +16,7 @@ PENDING ?= test/contract/pending.txt
 CONTRACT_FLAGS ?=
 V1_CLIENT_ARGS ?= --url http://127.0.0.1:19391 --url http://127.0.0.1:19392 --url http://127.0.0.1:19393 --receiver http://127.0.0.1:19280
 
-.PHONY: build test lint integration integration-v026 contract strict-contract release-check contract-record contract-determinism v1-client-check v1-client-syntax lab lab-check lab-down telemetry telemetry-check telemetry-down fanout fanout-check fanout-down docker ci clean
+.PHONY: build test lint integration integration-v026 contract strict-contract release-check contract-record contract-determinism v1-client-check v1-client-syntax lab lab-check lab-down telemetry telemetry-check telemetry-down fanout fanout-check fanout-down dashboards-check docker ci clean
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/alertmanager-proxy ./cmd/alertmanager-proxy
@@ -106,6 +106,13 @@ fanout-check:
 
 fanout-down:
 	$(FANOUT_COMPOSE) down -v
+
+# Dashboard/rules checks use the fanout stack for ClickHouse data.
+dashboards-check:
+	go test -tags dashboards -count=1 -timeout=3m -v ./test/dashboards/
+
+rules-check:
+	docker run --rm -v "$(CURDIR)/deploy/rules:/rules:ro" --entrypoint promtool prom/prometheus:v2.55.1 test rules /rules/alert_path_test.yml
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(VERSION) .
