@@ -43,8 +43,8 @@ Finish an in-progress story before selecting the next eligible row.
 | [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | **Done** | Report clients that post alerts to fewer than all three Alertmanagers |
 | [100](100-alert-path-dashboards/) | Alert-path dashboards | 075, 080 | **Done** | Permanent per-client view of the alert path (v1 and v2) + partial fanout; includes the v1-retirement view |
 | [105](105-upstream-release-compatibility/) | Continuous upstream release compatibility | 072, 075 | **Done** | Production/target/latest compatibility matrix on every push, plus daily discovery of new upstream releases |
-| [090](090-opt-in-alert-replication/) | Opt-in alert replication | 080, 100 | Not started | Pre-cutover opt-in behaviour: forward alerts to peers for partial clients, with production enablement justified by observed need |
-| [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072, 075, 080, 090, 100, 105 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover after feature completion |
+| [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072, 075, 080, 100, 105 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover after feature completion |
+| [090](090-opt-in-alert-replication/) | Opt-in alert replication | 074, 080, 100 | Not started | Post-074, evidence-gated: add default-off peer replication only if production fanout data shows partial clients; close without implementation if none |
 | [110](110-packaging-and-cutover/) | Permanent operations + v1 retirement | 074, 100, 105 | Not started | Extend MVP operations with dashboard-backed procedures and the tested `v1.enabled` switch-off/rollback |
 | [120](120-rust-port-evaluation/) | Rust port evaluation | 110 | Not started | Port to Rust; keep only if it measurably wins on footprint/latency and passes the identical harness |
 
@@ -58,12 +58,16 @@ Finish an in-progress story before selecting the next eligible row.
   current contract exchanges plus estate-specific additions pass with no pending exemptions, and
   the chosen upgrade is rehearsed and deployed with human approval. Unknown clients are an explicit
   evidence gap, not assumed compatible. Preserve client delivery across the three-instance topology.
-- Feature-complete work (v2 inspection, fanout detection, dashboards, scheduled release checks and
-  opt-in replication) precedes 074. 074 is the cutover/release boundary after those features and the
-  production evidence; 110 owns later permanent-operation refinements and v1 retirement. Rust is
-  evaluated after 110.
+- Feature-complete work (v2 inspection, fanout detection, dashboards and scheduled release checks)
+  precedes 074. 074 is the cutover/release boundary after those features and the production
+  evidence; 110 owns later permanent-operation refinements and v1 retirement. Rust is evaluated
+  after 110.
+- **Opt-in replication is deferred past 074** (rescoped 2026-11-24). Detection (080) and the
+  dashboards (100) provide the evidence; if 074's production fanout data shows no partial clients,
+  090 is closed without an implementation. If it does, 090 adds a default-off peer-replication mode
+  and records the measured cost before any enablement. It no longer gates the initial cutover.
 - 072 gates the selected upgrade version now; 105 extends that gate to future releases. 074 owns
-  initial packaging, estate client evidence and cutover after 075/080/090/100/105.
+  initial packaging, estate client evidence and cutover after 075/080/100/105.
 - Operator confirmed current 0.26.0, target 0.34.1 and three instances on Kubernetes in 025.
   [Client inventory](../client-inventory.md) records remaining client/deployment evidence and the
   distinction between deprecating old direct endpoints and disabling the proxy's v1 translation.
