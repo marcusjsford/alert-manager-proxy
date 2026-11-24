@@ -2,8 +2,13 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 IMAGE   ?= alertmanager-proxy
 LINT_IMAGE ?= golangci/golangci-lint:v2.14.0
 AM_VERSION ?= v0.34.1
-REFERENCE_VERSION ?= v0.26.0
+# PRODUCTION_VERSION is the Alertmanager running in production; the selected
+# upgrade target stays pinned separately. LATEST_VERSION is discovered only
+# when a target uses it (daily in the scheduled upstream workflow).
+PRODUCTION_VERSION ?= v0.26.0
+REFERENCE_VERSION ?= $(PRODUCTION_VERSION)
 TARGET_VERSION ?= v0.34.1
+LATEST_VERSION ?= $(shell test/release/latest-version.sh)
 AM_PORT ?= 19093
 COMPOSE = docker compose -f test/integration/docker-compose.yml -p amp-integration
 CONTRACT_COMPOSE = docker compose -f test/contract/docker-compose.yml -p amp-contract
@@ -16,7 +21,7 @@ PENDING ?= test/contract/pending.txt
 CONTRACT_FLAGS ?=
 V1_CLIENT_ARGS ?= --url http://127.0.0.1:19391 --url http://127.0.0.1:19392 --url http://127.0.0.1:19393 --receiver http://127.0.0.1:19280
 
-.PHONY: build test lint integration integration-v026 contract strict-contract release-check contract-record contract-determinism v1-client-check v1-client-syntax lab lab-check lab-down telemetry telemetry-check telemetry-down fanout fanout-check fanout-down dashboards-check docker ci clean
+.PHONY: build test lint integration integration-v026 contract strict-contract release-check compat-matrix upstream-check contract-record contract-determinism v1-client-check v1-client-syntax lab lab-check lab-down telemetry telemetry-check telemetry-down fanout fanout-check fanout-down dashboards-check docker ci clean
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o bin/alertmanager-proxy ./cmd/alertmanager-proxy
@@ -52,7 +57,20 @@ strict-contract:
 	$(MAKE) contract CONTRACT_FLAGS=-strict AM_VERSION=$(REFERENCE_VERSION)
 	$(MAKE) contract CONTRACT_FLAGS=-strict AM_VERSION=$(TARGET_VERSION)
 
-release-check: strict-contract
+# Release gate: the existing dual-version contract plus the latest upstream
+# release. The upstream check also runs the pass-through/inspection tests.
+release-check: strict-contract upstream-check
+
+# Full matrix against production, the selected upgrade target and latest
+# upstream, using downloaded Alertmanager binaries rather than Docker.
+compat-matrix:
+	@set -e; for v in $(PRODUCTION_VERSION) $(TARGET_VERSION) $(LATEST_VERSION); do \
+		test/release/check-version.sh $$v; \
+	done
+
+# Latest upstream release only; used by the scheduled workflow and make ci.
+upstream-check:
+	test/release/check-version.sh $(LATEST_VERSION)
 
 # Legacy Python v1 client probe; requires the manual lab or explicit --url args.
 v1-client-check:
@@ -119,8 +137,9 @@ docker:
 
 # Everything the Forgejo pipeline runs, locally. The persistent manual lab is
 # separate; integration and contract create and remove their own environments.
-# The strict contract runs both versions and is the release gate.
-ci: build test lint integration integration-v026 strict-contract docker
+# The strict contract covers production and the target; upstream-check adds
+# the latest upstream release, matching the CI compatibility jobs.
+ci: build test lint integration integration-v026 strict-contract upstream-check docker
 
 clean:
 	rm -rf bin
