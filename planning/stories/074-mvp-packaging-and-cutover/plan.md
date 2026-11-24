@@ -1,12 +1,13 @@
 # 074 — MVP packaging, operations + cutover
 
-**Depends on:** 072, 075, 080, 090, 100, 105 · **Status:** Not started
+**Depends on:** 072, 075, 080, 100, 105 · **Status:** Not started
 
 ## Goal
 
 Release v1 compatibility in the confirmed three-instance Kubernetes topology and move clients from
 0.26.0 to the operator-selected 0.34.1 target reversibly,
-after the feature-complete observability, detection and replication work.
+after the feature-complete observability and detection work. Replication (090) is deferred until
+074's production fanout evidence shows that partial clients actually exist.
 
 ## Scope
 
@@ -14,8 +15,8 @@ after the feature-complete observability, detection and replication work.
   fanout preserved, pinned/versioned image, configuration example, ports/auth/TLS arrangements.
 - Separate proxy and upstream health checks, resource limits, restart policy, basic error/latency
   self-alerting and telemetry queries using 030. Demonstrate telemetry-backend failure does not
-  interrupt delivery. Use 100 dashboards and 080 fanout views; 090 replication is implemented and
-  configurable, with production enablement remaining evidence-based.
+  interrupt delivery. Use 100 dashboards and 080 fanout views, and record the actual partial clients
+  and their fanout as the evidence that decides whether 090 replication is needed.
 - Close 025's remaining estate inventory: obtain actual client versions (including the oldest
   sender), production auth/TLS/path/manifest details, and run the representative/full client corpus
   end-to-end against the deployed topology.
@@ -34,8 +35,10 @@ after the feature-complete observability, detection and replication work.
 
 ## Explicit non-goals
 
-- v1 disable/retirement switch (110), deep v2 inspection (075), dashboards (100), automated fanout
-  detection/replication (080/090), scheduled release discovery (105), Rust (120).
+- v1 disable/retirement switch (110), deep v2 inspection (075), building dashboards (100),
+  automated fanout detection (080 — this story consumes it but does not change it), replication
+  (090 — deferred until this story's production evidence), scheduled release discovery (105),
+  Rust (120).
 
 ## Key files
 

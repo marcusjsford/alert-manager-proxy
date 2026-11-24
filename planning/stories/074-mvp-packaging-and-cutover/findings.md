@@ -2,6 +2,14 @@
 
 _Append-only. Record discoveries, evidence gaps, decisions and deviations as they happen._
 
+## 2026-11-24 — Replication dependency removed
+
+090 (opt-in alert replication) was removed from this story's dependencies. It is default-off and its
+production value can only be judged from the fanout data this deployment produces; building it first
+would guess at a client need and add write amplification before the evidence exists. This story now
+records actual partial clients and their fanout as the input to 090, which is implemented only if
+that evidence warrants it. The initial cutover remains possible with replication off.
+
 ## 2026-10-29 — MVP boundary split from 110
 
 Initial deployment and upgrade no longer wait for 075/080/100. Basic telemetry, failure visibility,
