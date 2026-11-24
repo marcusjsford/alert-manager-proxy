@@ -1,6 +1,6 @@
 # 105 — Upstream release compatibility
 
-**Depends on:** 072, 075 · **Status:** Not started
+**Depends on:** 072, 075 · **Status:** Done
 
 ## Goal
 
