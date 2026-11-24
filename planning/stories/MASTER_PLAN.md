@@ -42,7 +42,7 @@ Finish an in-progress story before selecting the next eligible row.
 | [075](075-v2-request-instrumentation/) | v2 request-level instrumentation | 030 | **Done** | Same span attributes and alert counters for v2 pass-through calls as for v1, without rewriting v2 traffic |
 | [080](080-partial-fanout-detection/) | Partial-fanout detection | 040, 075 | **Done** | Report clients that post alerts to fewer than all three Alertmanagers |
 | [100](100-alert-path-dashboards/) | Alert-path dashboards | 075, 080 | **Done** | Permanent per-client view of the alert path (v1 and v2) + partial fanout; includes the v1-retirement view |
-| [105](105-upstream-release-compatibility/) | Continuous upstream release compatibility | 072, 075 | Not started | Extend the MVP gate to production/latest and automatically test newly discovered releases |
+| [105](105-upstream-release-compatibility/) | Continuous upstream release compatibility | 072, 075 | **Done** | Production/target/latest compatibility matrix on every push, plus daily discovery of new upstream releases |
 | [090](090-opt-in-alert-replication/) | Opt-in alert replication | 080, 100 | Not started | Pre-cutover opt-in behaviour: forward alerts to peers for partial clients, with production enablement justified by observed need |
 | [074](074-mvp-packaging-and-cutover/) | MVP packaging, operations + cutover | 072, 075, 080, 090, 100, 105 | Not started | Deploy 1:1 on Kubernetes, health/limits/restart/self-alerting, three-instance rehearsal, rollback, and human-approved cutover after feature completion |
 | [110](110-packaging-and-cutover/) | Permanent operations + v1 retirement | 074, 100, 105 | Not started | Extend MVP operations with dashboard-backed procedures and the tested `v1.enabled` switch-off/rollback |
@@ -81,6 +81,14 @@ mutation branch and absent findings mean the story is not yet Done. Planning ame
 with 015 as the requested roadmap update; no future story implementation is included.
 
 ## Completed Story Summaries
+
+### 105 — Continuous upstream release compatibility
+
+Added a reusable compatibility check that runs the strict v1 contract and pass-through/inspection
+tests against production (0.26.0), the selected target (0.34.1) and the latest upstream release
+(0.35.0 at verification). CI now runs all three on every push, and a daily scheduled workflow
+discovers new upstream releases and reports the result without a pin bump. The Alertmanager module
+dependency was updated to 0.35.0 with no proxy code change required.
 
 ### 100 — Alert-path dashboards
 

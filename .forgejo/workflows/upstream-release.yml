@@ -1,0 +1,40 @@
+name: Upstream release compatibility
+
+# Detect a new upstream Alertmanager release and run the same strict gate as
+# CI against it, without waiting for a human to bump a pin. A failing run is
+# the report: the contract table and per-step diffs are in the job log, along
+# with a REPORT line naming the release.
+#
+# The repo's CI already checks the latest release on every push; this schedule
+# is the backstop for periods with no pushes. Override the version with a
+# workflow dispatch to triage a specific release.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Alertmanager version to test (default: latest upstream)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  compat-latest:
+    runs-on: docker
+    container:
+      image: golang:1.26
+    steps:
+      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
+      - env:
+          REQUESTED_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          version="${REQUESTED_VERSION:-}"
+          if [ -z "$version" ]; then
+            version="$(test/release/latest-version.sh)"
+          fi
+          echo "Alertmanager release compatibility check: v$version"
+          test/release/check-version.sh "$version"
+        working-directory: ${{ github.workspace }}

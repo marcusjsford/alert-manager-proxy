@@ -1,7 +1,8 @@
 name: CI
 
-# Stage 1: build + unit tests, lint, pass-through integration against a real
-#          Alertmanager (as a job service), and the v1 contract harness.
+# Stage 1: build + unit tests, lint, and the strict contract plus
+#          pass-through/inspection matrix against production, the selected
+#          upgrade target and the latest upstream Alertmanager release.
 #          Runs on every push and PR. Same checks as `make ci`.
 # Stage 2: docker build, gated on stage 1.
 #
@@ -41,117 +42,46 @@ jobs:
       - run: golangci-lint run ./...
         working-directory: ${{ github.workspace }}
 
-  integration:
-    runs-on: docker
-    container:
-      image: golang:1.26
-    services:
-      alertmanager:
-        # Keep in step with test/integration/docker-compose.yml.
-        image: prom/alertmanager:v0.34.1
-    steps:
-      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
-      - run: |
-          for i in $(seq 1 30); do
-            curl -sf http://alertmanager:9093/-/ready >/dev/null && exit 0
-            sleep 1
-          done
-          echo "alertmanager service not ready" >&2; exit 1
-      - run: go test -tags integration -count=1 -v ./test/integration/
-        working-directory: ${{ github.workspace }}
-        env:
-          AMP_IT_UPSTREAM_URL: http://alertmanager:9093
-
-  integration-v026:
-    # Act runner shares one network between jobs; run after the target service
-    # so the `alertmanager` service alias cannot resolve to the other version.
-    needs: [integration]
-    runs-on: docker
-    container:
-      image: golang:1.26
-    services:
-      alertmanager:
-        # Keep in step with test/integration/docker-compose.yml.
-        image: prom/alertmanager:v0.26.0
-    steps:
-      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
-      - run: |
-          for i in $(seq 1 30); do
-            curl -sf http://alertmanager:9093/-/ready >/dev/null && exit 0
-            sleep 1
-          done
-          echo "alertmanager service not ready" >&2; exit 1
-      - run: go test -tags integration -count=1 -v ./test/integration/
-        working-directory: ${{ github.workspace }}
-        env:
-          AMP_IT_UPSTREAM_URL: http://alertmanager:9093
-
-  contract:
-    # v1 contract harness (story 020) against proxy -> current Alertmanager.
-    # Alertmanager needs test/contract/alertmanager.yml, which a job service
-    # can't mount (services start before the clone), so the job runs the
-    # release binary itself, checksum-verified. Keep AM_VERSION in step with
-    # test/contract/docker-compose.yml.
+  # Strict v1 contract plus pass-through/inspection tests for one Alertmanager
+  # version, driven by test/release/check-version.sh. Production and the
+  # selected upgrade target are pinned; the latest upstream release is
+  # discovered on every push so a new release cannot silently break the proxy.
+  compat-production:
     runs-on: docker
     container:
       image: golang:1.26
     env:
-      AM_VERSION: 0.34.1
+      AM_VERSION: "0.26.0"
     steps:
       - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
-      - run: |
-          cd /tmp
-          base=https://github.com/prometheus/alertmanager/releases/download/v$AM_VERSION
-          tarball=alertmanager-$AM_VERSION.linux-amd64.tar.gz
-          curl -sSfLO "$base/$tarball"
-          curl -sSfL "$base/sha256sums.txt" | grep " $tarball\$" | sha256sum -c -
-          tar xzf "$tarball"
-      - run: |
-          /tmp/alertmanager-$AM_VERSION.linux-amd64/alertmanager \
-            --config.file=test/contract/alertmanager.yml --storage.path=/tmp/am-data \
-            --web.listen-address=127.0.0.1:9093 > /tmp/alertmanager.log 2>&1 &
-          go build -o /tmp/alertmanager-proxy ./cmd/alertmanager-proxy
-          AMP_UPSTREAM_URL=http://127.0.0.1:9093 AMP_LISTEN_ADDRESS=127.0.0.1:9095 \
-            AMP_ADMIN_LISTEN_ADDRESS=127.0.0.1:9096 /tmp/alertmanager-proxy > /tmp/proxy.log 2>&1 &
-          go run ./test/contract/cmd/contract verify -strict -target http://127.0.0.1:9095 || {
-            status=$?; echo "--- alertmanager.log"; tail -50 /tmp/alertmanager.log
-            echo "--- proxy.log"; tail -50 /tmp/proxy.log; exit $status; }
+      - run: test/release/check-version.sh "$AM_VERSION"
         working-directory: ${{ github.workspace }}
 
-  contract-v026:
-    # v1 strict contract against the initial deployment version.
-    # Alertmanager needs test/contract/alertmanager.yml, which a job service
-    # can't mount (services start before the clone), so the job runs the
-    # release binary itself, checksum-verified. Keep AM_VERSION in step with
-    # test/contract/docker-compose.yml.
+  compat-target:
     runs-on: docker
     container:
       image: golang:1.26
     env:
-      AM_VERSION: 0.26.0
+      AM_VERSION: "0.34.1"
+    steps:
+      - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
+      - run: test/release/check-version.sh "$AM_VERSION"
+        working-directory: ${{ github.workspace }}
+
+  compat-latest:
+    runs-on: docker
+    container:
+      image: golang:1.26
     steps:
       - run: git clone --quiet "http://x-access-token:${{ secrets.GITHUB_TOKEN }}@forgejo:3000/${{ github.repository }}.git" "$GITHUB_WORKSPACE" && git -C "$GITHUB_WORKSPACE" checkout --quiet ${{ github.sha }}
       - run: |
-          cd /tmp
-          base=https://github.com/prometheus/alertmanager/releases/download/v$AM_VERSION
-          tarball=alertmanager-$AM_VERSION.linux-amd64.tar.gz
-          curl -sSfLO "$base/$tarball"
-          curl -sSfL "$base/sha256sums.txt" | grep " $tarball\$" | sha256sum -c -
-          tar xzf "$tarball"
-      - run: |
-          /tmp/alertmanager-$AM_VERSION.linux-amd64/alertmanager \
-            --config.file=test/contract/alertmanager.yml --storage.path=/tmp/am-data \
-            --web.listen-address=127.0.0.1:9093 > /tmp/alertmanager.log 2>&1 &
-          go build -o /tmp/alertmanager-proxy ./cmd/alertmanager-proxy
-          AMP_UPSTREAM_URL=http://127.0.0.1:9093 AMP_LISTEN_ADDRESS=127.0.0.1:9095 \
-            AMP_ADMIN_LISTEN_ADDRESS=127.0.0.1:9096 /tmp/alertmanager-proxy > /tmp/proxy.log 2>&1 &
-          go run ./test/contract/cmd/contract verify -strict -target http://127.0.0.1:9095 || {
-            status=$?; echo "--- alertmanager.log"; tail -50 /tmp/alertmanager.log
-            echo "--- proxy.log"; tail -50 /tmp/proxy.log; exit $status; }
+          version="$(test/release/latest-version.sh)"
+          echo "latest upstream Alertmanager: v$version"
+          test/release/check-version.sh "$version"
         working-directory: ${{ github.workspace }}
 
   docker-build:
-    needs: [build-test, lint, integration, integration-v026, contract, contract-v026]
+    needs: [build-test, lint, compat-production, compat-target, compat-latest]
     runs-on: docker
     container:
       image: docker:27-cli
