@@ -1,0 +1,38 @@
+# Alert-path rules. The ClickHouse query/exporter is expected to expose the
+# age gauges from deploy/queries/alert_path/*.sql (see docs/alert-path-dashboards.md).
+# `am_proxy_client_expected_interval_seconds` is configured per client so a
+# slow but healthy sender is not treated as silent. The proxy-up guard avoids
+# false silence alerts during a proxy outage.
+groups:
+  - name: alertmanager-proxy-alert-path
+    rules:
+      - alert: AlertmanagerProxyClientSilent
+        expr: |
+          (am_proxy_client_last_seen_age_seconds
+            > on(environment, client) group_left()
+              (2 * am_proxy_client_expected_interval_seconds))
+          and on(environment) (min by (environment) (up{job="alertmanager-proxy"}) == 1)
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Client stopped posting alerts"
+          description: "Client {{ $labels.client }} in {{ $labels.environment }} has not posted within twice its expected interval."
+
+      - alert: AlertmanagerProxyUnknownClient
+        expr: am_proxy_unknown_client_first_seen_age_seconds < 300
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "New unknown Alertmanager client"
+          description: "Unknown client at {{ $labels.client_address }} ({{ $labels.environment }}) first appeared recently."
+
+      - alert: AlertmanagerProxyNewV1Client
+        expr: am_proxy_v1_client_first_seen_age_seconds < 300
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "New v1 Alertmanager client"
+          description: "Client {{ $labels.client }} ({{ $labels.environment }}) first used v1 recently."
